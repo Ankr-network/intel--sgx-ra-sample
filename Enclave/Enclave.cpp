@@ -70,7 +70,7 @@ static const sgx_ec256_public_t def_service_public_key = {
  */
 
 /*
- * This doesn't really need to be a C++ source file, but a bug in 
+ * This doesn't really need to be a C++ source file, but a bug in
  * 2.1.3 and earlier implementations of the SGX SDK left a stray
  * C++ symbol in libsgx_tkey_exchange.so so it won't link without
  * a C++ compiler. Just making the source C++ was the easiest way
@@ -119,7 +119,7 @@ sgx_status_t enclave_ra_init(sgx_ec256_public_t key, int b_pse,
 	sgx_status_t ra_status;
 
 	/*
-	 * If we want platform services, we must create a PSE session 
+	 * If we want platform services, we must create a PSE session
 	 * before calling sgx_ra_init()
 	 */
 
@@ -166,7 +166,7 @@ sgx_status_t enclave_ra_get_key_hash(sgx_status_t *get_keys_ret,
 	sgx_ra_key_128_t k;
 
 	// First get the requested key which is one of:
-	//  * SGX_RA_KEY_MK 
+	//  * SGX_RA_KEY_MK
 	//  * SGX_RA_KEY_SK
 	// per sgx_ra_get_keys().
 
@@ -175,7 +175,7 @@ sgx_status_t enclave_ra_get_key_hash(sgx_status_t *get_keys_ret,
 
 	/* Now generate a SHA hash */
 
-	sha_ret= sgx_sha256_msg((const uint8_t *) &k, sizeof(k), 
+	sha_ret= sgx_sha256_msg((const uint8_t *) &k, sizeof(k),
 		(sgx_sha256_hash_t *) hash); // Sigh.
 
 	/* Let's be thorough */
@@ -183,6 +183,33 @@ sgx_status_t enclave_ra_get_key_hash(sgx_status_t *get_keys_ret,
 	memset(k, 0, sizeof(k));
 
 	return sha_ret;
+}
+
+sgx_status_t enclave_ra_encryptWithAES(sgx_status_t *get_keys_ret,
+	sgx_ra_context_t ctx)
+{
+	sgx_status_t aes_128_ret;
+	sgx_ra_key_128_t k;
+
+	// First get the requested key which is one of:
+	//  * SGX_RA_KEY_MK
+	//  * SGX_RA_KEY_SK
+	// per sgx_ra_get_keys().
+
+	*get_keys_ret= sgx_ra_get_keys(ctx, SGX_RA_KEY_SK, &k);
+	if ( *get_keys_ret != SGX_SUCCESS ) return *get_keys_ret;
+
+  uint8_t plaintext = 42;
+  sgx_cmac_128bit_tag_t *p_mac;
+
+  aes_128_ret = sgx_rijndael128_cmac_msg(&k, &plaintext, 1, p_mac);
+  if ( aes_128_ret != SGX_SUCCESS ) return aes_128_ret;
+
+	/* Let's be thorough */
+
+	memset(k, 0, sizeof(k));
+
+	return aes_128_ret;
 }
 
 sgx_status_t enclave_ra_close(sgx_ra_context_t ctx)
