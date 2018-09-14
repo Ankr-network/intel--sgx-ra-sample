@@ -856,7 +856,7 @@ int encryptWithAES(unsigned char *plaintext, int plaintext_len, unsigned char *k
 
   /* Initialise the encryption operation. IMPORTANT - ensure you use a key
    * and IV size appropriate for your cipher
-   * In this example we are using 256 bit AES (i.e. a 256 bit key). The
+   * In this example we are using 128 bit AES (i.e. a 128 bit key). The
    * IV size for *most* modes is the same as the block size. For AES this
    * is 128 bits */
   if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
@@ -895,7 +895,7 @@ int decryptWithAES(unsigned char *ciphertext, int ciphertext_len, unsigned char 
 
   /* Initialise the decryption operation. IMPORTANT - ensure you use a key
    * and IV size appropriate for your cipher
-   * In this example we are using 256 bit AES (i.e. a 256 bit key). The
+   * In this example we are using 128 bit AES (i.e. a 128 bit key). The
    * IV size for *most* modes is the same as the block size. For AES this
    * is 128 bits */
   if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
