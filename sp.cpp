@@ -52,6 +52,8 @@ in the License.
 #include "logfile.h"
 #include "settings.h"
 
+#include <openssl/err.h>
+
 using namespace json;
 using namespace std;
 
@@ -111,6 +113,12 @@ int get_attestation_report(IAS_Connection *ias, int version,
 	int strict_trust);
 
 int get_proxy(char **server, unsigned int *port, const char *url);
+
+int encryptWithAES(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+  unsigned char *iv, unsigned char *ciphertext);
+
+int decryptWithAES(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
+  unsigned char *iv, unsigned char *plaintext);
 
 char debug = 0;
 char verbose = 0;
@@ -437,7 +445,7 @@ int main(int argc, char *argv[])
 		off_t sz;
 
 		if ( ! from_file(NULL, config.cert_passwd_file, &sz) ) {
-			eprintf("can't load password from %s\n", 
+			eprintf("can't load password from %s\n",
 				config.cert_passwd_file);
 			return 1;
 		}
@@ -456,7 +464,7 @@ int main(int argc, char *argv[])
 			if ( ! from_file((unsigned char *) passwd, config.cert_passwd_file,
 			 	&sz) ) {
 
-				eprintf("can't load password from %s\n", 
+				eprintf("can't load password from %s\n",
 					config.cert_passwd_file);
 				return 1;
 			}
@@ -480,7 +488,7 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
 			SecureZeroMemory(passwd, sz);
 #else
-			// -fno-builtin-memset prevents optimizing this away 
+			// -fno-builtin-memset prevents optimizing this away
 			memset(passwd, 0, sz);
 #endif
 		}
@@ -502,9 +510,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/* 
-	 * Set the cert store for this connection. This is used for verifying 
-	 * the IAS signing certificate, not the TLS connection with IAS (the 
+	/*
+	 * Set the cert store for this connection. This is used for verifying
+	 * the IAS signing certificate, not the TLS connection with IAS (the
 	 * latter is handled using config.ca_bundle).
 	 */
 	ias->cert_store(config.store);
@@ -517,7 +525,7 @@ int main(int argc, char *argv[])
 	if ( strlen(config.ca_bundle) ) ias->ca_bundle(config.ca_bundle);
 
 	/* Get our message IO object. */
-	
+
 	if ( flag_stdio ) {
 		msgio= new MsgIO();
 	} else {
@@ -548,10 +556,10 @@ int main(int argc, char *argv[])
 
 		/*
 	 	* sgx_ra_msg2_t is a struct with a flexible array member at the
-	 	* end (defined as uint8_t sig_rl[]). We could go to all the 
+	 	* end (defined as uint8_t sig_rl[]). We could go to all the
 	 	* trouble of building a byte array large enough to hold the
 	 	* entire struct and then cast it as (sgx_ra_msg2_t) but that's
-	 	* a lot of work for no gain when we can just send the fixed 
+	 	* a lot of work for no gain when we can just send the fixed
 	 	* portion and the array portion by hand.
 	 	*/
 
@@ -726,7 +734,7 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 		 * that the MRSIGNER matches our signing key, and the MRENCLAVE
 		 * hash matches an enclave that we compiled.
 		 *
-		 * Other policy decisions might include examining ISV_SVN to 
+		 * Other policy decisions might include examining ISV_SVN to
 		 * prevent outdated/deprecated software from successfully
 		 * attesting, and ensuring the TCB is not out of date.
 		 */
@@ -756,7 +764,7 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 		}
 
 
-		edividerWithText("Copy/Paste Msg4 Below to Client"); 
+		edividerWithText("Copy/Paste Msg4 Below to Client");
 
 		/* Serialize the members of the Msg4 structure independently */
 		/* vs. the entire structure as one send_msg() */
@@ -793,6 +801,30 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 				eprintf("SHA256(MK) = %s\n", hexstring(hashmk, 32));
 				eprintf("SHA256(SK) = %s\n", hexstring(hashsk, 32));
 			}
+
+			// Encrypt and decrypt based on
+			// https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
+
+			unsigned char* key = mk;
+			// FIXME: Use random (not necessarily secret) IV
+		  unsigned char* iv = (unsigned char *) "0123456789012345";
+			unsigned char* plaintext = (unsigned char*) "Hello, Ankr!";
+			unsigned char ciphertext[128];
+			unsigned char decryptedtext[128];
+			int decryptedtext_len, ciphertext_len;
+
+			eprintf("Plaintext: %s\n", plaintext);
+
+			ciphertext_len = encryptWithAES(plaintext, strlen ((char *)plaintext), key, iv,
+      									ciphertext);
+
+			eprintf("Ciphertext: %s\n", hexstring(ciphertext, ciphertext_len));
+
+			decryptedtext_len = decryptWithAES(ciphertext, ciphertext_len, key, iv,
+    												decryptedtext);
+
+			decryptedtext[decryptedtext_len] = '\0';
+			eprintf("Decrypted text: %s\n", decryptedtext);
 		}
 
 	} else {
@@ -802,6 +834,90 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 	free(b64quote);
 
 	return 1;
+}
+
+void handleErrors(void)
+{
+  ERR_print_errors_fp(stderr);
+  abort();
+}
+
+int encryptWithAES(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+  unsigned char *iv, unsigned char *ciphertext)
+{
+  EVP_CIPHER_CTX *ctx;
+
+  int len;
+
+  int ciphertext_len;
+
+  /* Create and initialise the context */
+  if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+  /* Initialise the encryption operation. IMPORTANT - ensure you use a key
+   * and IV size appropriate for your cipher
+   * In this example we are using 256 bit AES (i.e. a 256 bit key). The
+   * IV size for *most* modes is the same as the block size. For AES this
+   * is 128 bits */
+  if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+    handleErrors();
+
+  /* Provide the message to be encrypted, and obtain the encrypted output.
+   * EVP_EncryptUpdate can be called multiple times if necessary
+   */
+  if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
+    handleErrors();
+  ciphertext_len = len;
+
+  /* Finalise the encryption. Further ciphertext bytes may be written at
+   * this stage.
+   */
+  if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len)) handleErrors();
+  ciphertext_len += len;
+
+  /* Clean up */
+  EVP_CIPHER_CTX_free(ctx);
+
+  return ciphertext_len;
+}
+
+int decryptWithAES(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
+  unsigned char *iv, unsigned char *plaintext)
+{
+  EVP_CIPHER_CTX *ctx;
+
+  int len;
+
+  int plaintext_len;
+
+  /* Create and initialise the context */
+  if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+  /* Initialise the decryption operation. IMPORTANT - ensure you use a key
+   * and IV size appropriate for your cipher
+   * In this example we are using 256 bit AES (i.e. a 256 bit key). The
+   * IV size for *most* modes is the same as the block size. For AES this
+   * is 128 bits */
+  if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+    handleErrors();
+
+  /* Provide the message to be decrypted, and obtain the plaintext output.
+   * EVP_DecryptUpdate can be called multiple times if necessary
+   */
+  if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
+    handleErrors();
+  plaintext_len = len;
+
+  /* Finalise the decryption. Further plaintext bytes may be written at
+   * this stage.
+   */
+  if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) handleErrors();
+  plaintext_len += len;
+
+  /* Clean up */
+  EVP_CIPHER_CTX_free(ctx);
+
+  return plaintext_len;
 }
 
 /*
@@ -850,7 +966,7 @@ int process_msg01 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 
 	/* According to the Intel SGX Developer Reference
 	 * "Currently, the only valid extended Intel(R) EPID group ID is zero. The
-	 * server should verify this value is zero. If the Intel(R) EPID group ID 
+	 * server should verify this value is zero. If the Intel(R) EPID group ID
 	 * is not zero, the server aborts remote attestation"
 	 */
 
@@ -887,7 +1003,7 @@ int process_msg01 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 
 	/*
 	 * Derive the KDK from the key (Ga) in msg1 and our session key.
-	 * An application would normally protect the KDK in memory to 
+	 * An application would normally protect the KDK in memory to
 	 * prevent trivial inspection.
 	 */
 
@@ -902,8 +1018,8 @@ int process_msg01 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 	if ( debug ) eprintf("+++ KDK = %s\n", hexstring( config->kdk, 16));
 
 	/*
- 	 * Derive the SMK from the KDK 
-	 * SMK = AES_CMAC(KDK, 0x01 || "SMK" || 0x00 || 0x80 || 0x00) 
+ 	 * Derive the SMK from the KDK
+	 * SMK = AES_CMAC(KDK, 0x01 || "SMK" || 0x00 || 0x80 || 0x00)
 	 */
 
 	if ( debug ) eprintf("+++ deriving SMK\n");
@@ -920,7 +1036,7 @@ int process_msg01 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 	 *
 	 * where:
 	 *
-	 * A      = Gb || SPID || TYPE || KDF-ID || SigSP(Gb, Ga) 
+	 * A      = Gb || SPID || TYPE || KDF-ID || SigSP(Gb, Ga)
 	 *          (64 + 16 + 2 + 2 + 64 = 148 bytes)
 	 * Ga     = Client enclave's session key
 	 *          (32 bytes)
@@ -938,10 +1054,10 @@ int process_msg01 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 	 *
 	 * CMACsmk= AES-128-CMAC(A)
 	 *          (16 bytes)
-	 * 
+	 *
 	 * || denotes concatenation
 	 *
-	 * Note that all key components (Ga.x, etc.) are in little endian 
+	 * Note that all key components (Ga.x, etc.) are in little endian
 	 * format, meaning the byte streams need to be reversed.
 	 *
 	 * For SigRL, send:
@@ -1093,7 +1209,7 @@ int get_sigrl (IAS_Connection *ias, int version, sgx_epid_group_id_t gid,
 
 int get_attestation_report(IAS_Connection *ias, int version,
 	const char *b64quote, sgx_ps_sec_prop_desc_t secprop, ra_msg4_t *msg4,
-	int strict_trust) 
+	int strict_trust)
 {
 	IAS_Request *req = NULL;
 	map<string,string> payload;
@@ -1110,7 +1226,7 @@ int get_attestation_report(IAS_Connection *ias, int version,
 	}
 
 	payload.insert(make_pair("isvEnclaveQuote", b64quote));
-	
+
 	status= req->report(payload, content, messages);
 	if ( status == IAS_OK ) {
 		JSON reportObj = JSON::Load(content);
@@ -1155,10 +1271,10 @@ int get_attestation_report(IAS_Connection *ias, int version,
 				reportObj["epidPseudonym"].ToString().c_str());
 			edivider();
 		}
-          
+
 		/*
 		 * This sample's attestion policy is based on isvEnclaveQuoteStatus:
-		 * 
+		 *
 		 *   1) if "OK" then return "Trusted"
 		 *
  		 *   2) if "CONFIGURATION_NEEDED" then return
@@ -1167,14 +1283,14 @@ int get_attestation_report(IAS_Connection *ias, int version,
 		 *
 		 *   3) return "NotTrusted" for all other responses
 		 *
-		 * 
-		 * ItsComplicated means the client is not trusted, but can 
+		 *
+		 * ItsComplicated means the client is not trusted, but can
 		 * conceivable take action that will allow it to be trusted
 		 * (such as a BIOS update).
  		 */
 
 		/*
-		 * Simply check to see if status is OK, else enclave considered 
+		 * Simply check to see if status is OK, else enclave considered
 		 * not trusted
 		 */
 
@@ -1191,9 +1307,10 @@ int get_attestation_report(IAS_Connection *ias, int version,
 				if ( verbose ) eprintf("Enclave NOT TRUSTED and COMPLICATED - Reason: %s\n",
 					reportObj["isvEnclaveQuoteStatus"].ToString().c_str());
 			} else {
+				// Trust the enclave even if it's complicated
 				if ( verbose ) eprintf("Enclave TRUSTED and COMPLICATED - Reason: %s\n",
 					reportObj["isvEnclaveQuoteStatus"].ToString().c_str());
-				msg4->status = Trusted_ItsComplicated;
+				msg4->status = Trusted;
 			}
 		} else if ( !(reportObj["isvEnclaveQuoteStatus"].ToString().compare("GROUP_OUT_OF_DATE"))) {
 			msg4->status = NotTrusted_ItsComplicated;
@@ -1220,14 +1337,14 @@ int get_attestation_report(IAS_Connection *ias, int version,
 			/* remove the TLV Header (8 base16 chars, ie. 4 bytes) from
 			 * the PIB Buff. */
 
-			pibBuff.erase(pibBuff.begin(), pibBuff.begin() + (4*2)); 
+			pibBuff.erase(pibBuff.begin(), pibBuff.begin() + (4*2));
 
-			int ret = from_hexstring ((unsigned char *)&msg4->platformInfoBlob, 
+			int ret = from_hexstring ((unsigned char *)&msg4->platformInfoBlob,
 				pibBuff.c_str(), pibBuff.length());
 		} else {
 			if ( verbose ) eprintf("A Platform Info Blob (PIB) was NOT provided by the IAS\n");
 		}
-                 
+
             return 1;
 	}
 
@@ -1290,7 +1407,7 @@ int get_proxy(char **server, unsigned int *port, const char *url)
 
 	idx1 = lcurl.find_first_not_of("/", idx1 + 1);
 	if (idx1 == string::npos) return 0;
-	
+
 	idx2 = lcurl.find_first_of(":", idx1);
 	if (idx2 == string::npos) {
 		idx2 = lcurl.find_first_of("/", idx1);
@@ -1329,7 +1446,7 @@ int get_proxy(char **server, unsigned int *port, const char *url)
 #define NNL <<endl<<endl<<
 #define NL <<endl<<
 
-void usage () 
+void usage ()
 {
 	cerr << "usage: sp [ options ] [ port ]" NL
 "Required:" NL
@@ -1378,4 +1495,3 @@ void usage ()
 
 	::exit(1);
 }
-
