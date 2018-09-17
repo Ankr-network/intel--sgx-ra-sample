@@ -797,6 +797,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	if ( enclaveTrusted == Trusted ) {
 		sgx_status_t key_status, sha_status, aes_128_dec_status, aes_128_enc_status, aes_status;
 		sgx_sha256_hash_t mkhash, skhash;
+		char ciphertext[128];
 
 		// First the MK
 
@@ -834,6 +835,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			&aes_128_dec_status,
 			&aes_128_enc_status,
 			&key_status,
+			(uint8_t*) ciphertext,
 			ra_ctx
 		);
 
@@ -850,6 +852,10 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			aes_128_enc_status);
 
 		if ( debug ) eprintf("+++ sgx_ra_get_keys (SK) ret= 0x%04x\n", key_status);
+
+		if (verbose) {
+			eprintf("Ciphertext: %s\n", hexstring(ciphertext, strlen(ciphertext)));
+		}
 		// if ( verbose ) {
 		// 	eprintf("SHA256(MK) = ");
 		// 	print_hexstring(stderr, mkhash, sizeof(mkhash));
