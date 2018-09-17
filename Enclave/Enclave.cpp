@@ -209,7 +209,6 @@ sgx_status_t enclave_ra_encryptWithAES(
   uint8_t plaintext = 42;
   uint32_t plaintext_len = 1;
   uint8_t ciphertext[128];
-  uint32_t ciphertext_len = 128;
   uint8_t decipheredtext = 0;
 
   unsigned char* p_iv = (unsigned char *) "012345678901";
@@ -245,7 +244,7 @@ sgx_status_t enclave_ra_encryptWithAES(
   *aes_128_dec_ret = sgx_rijndael128GCM_decrypt(
              &k,
              ciphertext,
-             ciphertext_len,
+             strlen((char*) ciphertext),
              &decipheredtext,
              p_iv,
              iv_len,
