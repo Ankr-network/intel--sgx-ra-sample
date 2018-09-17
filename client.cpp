@@ -833,8 +833,8 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		if ( debug ) eprintf("+++ ECALL enclave_ra_encryptWithAES ret= 0x%04x\n",
 			status);
 
-		// if ( debug ) eprintf("+++ aes_128_status ret= 0x%04x\n",
-		// 	aes_128_status);
+		if ( debug ) eprintf("+++ aes_128_status ret= 0x%04x\n",
+			aes_128_status);
 
 		if ( debug ) eprintf("+++ sgx_ra_get_keys (SK) ret= 0x%04x\n", key_status);
 		// if ( verbose ) {
