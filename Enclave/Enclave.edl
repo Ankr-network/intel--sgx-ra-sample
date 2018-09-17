@@ -56,6 +56,15 @@ enclave {
 			sgx_ra_context_t ctx
 		);
 
+		public sgx_status_t enclave_ra_decryptWithAES(
+			[out] sgx_status_t *aes_128_dec_status,
+			[out] sgx_status_t *get_keys_status,
+			[out] uint8_t *decipheredtext,
+			[in] uint8_t ciphertext[128],
+			[in] sgx_aes_gcm_128bit_tag_t *p_mac,
+			sgx_ra_context_t ctx
+		);
+
 		public sgx_status_t enclave_ra_close(sgx_ra_context_t ctx);
 
 	};
