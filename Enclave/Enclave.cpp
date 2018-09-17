@@ -215,9 +215,9 @@ sgx_status_t enclave_ra_encryptWithAES(
   uint8_t *p_aad = NULL;
   uint32_t aad_len = 0;
 
-  sgx_aes_gcm_128bit_tag_t *p_out_mac;
+  sgx_aes_gcm_128bit_tag_t p_out_mac;
 
-  sgx_cmac_128bit_tag_t *p_mac;
+  // sgx_cmac_128bit_tag_t p_mac;
 
   // aes_128_cmac_ret = sgx_rijndael128_cmac_msg(&k, &plaintext, 1, p_mac);
   // if ( aes_128_cmac_ret != SGX_SUCCESS ) return aes_128_cmac_ret;
@@ -234,7 +234,7 @@ sgx_status_t enclave_ra_encryptWithAES(
                       iv_len,
                       p_aad,
                       aad_len,
-                      p_out_mac
+                      &p_out_mac
                     );
 
   if ( *aes_128_enc_ret != SGX_SUCCESS ) return *aes_128_enc_ret;
