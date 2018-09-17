@@ -795,7 +795,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	 */
 
 	if ( enclaveTrusted == Trusted ) {
-		sgx_status_t key_status, sha_status, aes_128_status;
+		sgx_status_t key_status, sha_status, aes_128_enc_status, aes_status;
 		sgx_sha256_hash_t mkhash, skhash;
 
 		// First the MK
@@ -828,13 +828,16 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		}
 
 		if ( debug ) eprintf("+++ encrypting w/in enclave using SK\n");
-		status = enclave_ra_encryptWithAES(eid, &aes_128_status, &key_status, ra_ctx);
+		status = enclave_ra_encryptWithAES(eid, &aes_status, &aes_128_enc_status, &key_status, ra_ctx);
 
 		if ( debug ) eprintf("+++ ECALL enclave_ra_encryptWithAES ret= 0x%04x\n",
 			status);
 
-		if ( debug ) eprintf("+++ aes_128_status ret= 0x%04x\n",
-			aes_128_status);
+		if ( debug ) eprintf("+++ ECALL enclave_ra_encryptWithAES retval= 0x%04x\n",
+			aes_status);
+
+		if ( debug ) eprintf("+++ aes_128_enc_status ret= 0x%04x\n",
+			aes_128_enc_status);
 
 		if ( debug ) eprintf("+++ sgx_ra_get_keys (SK) ret= 0x%04x\n", key_status);
 		// if ( verbose ) {
