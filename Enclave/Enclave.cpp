@@ -255,6 +255,8 @@ sgx_status_t enclave_ra_encryptWithAES(
 
   if ( *aes_128_dec_ret != SGX_SUCCESS ) return *aes_128_dec_ret;
 
+  if (plaintext != decipheredtext) return SGX_ERROR_UNEXPECTED;
+
 	/* Let's be thorough */
 
 	memset(k, 0, sizeof(k));
