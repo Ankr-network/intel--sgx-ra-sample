@@ -188,17 +188,12 @@ sgx_status_t enclave_ra_get_key_hash(sgx_status_t *get_keys_ret,
 sgx_status_t enclave_ra_encryptWithAES(sgx_status_t *get_keys_ret,
 	sgx_ra_context_t ctx)
 {
-<<<<<<< HEAD
 
   // Test return value
   // return SGX_ERROR_UNEXPECTED;
 	sgx_status_t aes_128_cmac_ret;
 	sgx_ra_key_128_t k;
   sgx_status_t aes_128_enc_ret;
-=======
-	sgx_status_t aes_128_ret;
-	sgx_ra_key_128_t k;
->>>>>>> b72b91e5c2998b7535df05f5e3b02d6bc0817284
 
 	// First get the requested key which is one of:
 	//  * SGX_RA_KEY_MK
@@ -209,7 +204,6 @@ sgx_status_t enclave_ra_encryptWithAES(sgx_status_t *get_keys_ret,
 	if ( *get_keys_ret != SGX_SUCCESS ) return *get_keys_ret;
 
   uint8_t plaintext = 42;
-<<<<<<< HEAD
   uint32_t plaintext_len = 1;
   uint8_t ciphertext[128];
 
@@ -240,22 +234,12 @@ sgx_status_t enclave_ra_encryptWithAES(sgx_status_t *get_keys_ret,
         );
 
   if ( aes_128_enc_ret != SGX_SUCCESS ) return aes_128_enc_ret;
-=======
-  sgx_cmac_128bit_tag_t *p_mac;
-
-  aes_128_ret = sgx_rijndael128_cmac_msg(&k, &plaintext, 1, p_mac);
-  if ( aes_128_ret != SGX_SUCCESS ) return aes_128_ret;
->>>>>>> b72b91e5c2998b7535df05f5e3b02d6bc0817284
 
 	/* Let's be thorough */
 
 	memset(k, 0, sizeof(k));
 
-<<<<<<< HEAD
 	return aes_128_enc_ret;
-=======
-	return aes_128_ret;
->>>>>>> b72b91e5c2998b7535df05f5e3b02d6bc0817284
 }
 
 sgx_status_t enclave_ra_close(sgx_ra_context_t ctx)
