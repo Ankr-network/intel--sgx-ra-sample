@@ -224,16 +224,18 @@ sgx_status_t enclave_ra_encryptWithAES(
 
   // Encrypt data using AES 128-bit in GCM mode using
   // SGX-provided cryptographic library
-  *aes_128_enc_ret = sgx_rijndael128GCM_encrypt(&k,
-             &plaintext,
-             plaintext_len,
-             ciphertext,
-             p_iv,
-             iv_len,
-             p_aad,
-             aad_len,
-             p_out_mac
-        );
+  // Both sgx_aes_gcm_128bit_key_t and sgx_ra_key_128_t are uint8_t[16] (128 bit)
+  *aes_128_enc_ret = sgx_rijndael128GCM_encrypt(
+                      &k,
+                      &plaintext,
+                      plaintext_len,
+                      ciphertext,
+                      p_iv,
+                      iv_len,
+                      p_aad,
+                      aad_len,
+                      p_out_mac
+                    );
 
   if ( *aes_128_enc_ret != SGX_SUCCESS ) return *aes_128_enc_ret;
 
