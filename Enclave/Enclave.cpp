@@ -188,8 +188,12 @@ sgx_status_t enclave_ra_get_key_hash(sgx_status_t *get_keys_ret,
 sgx_status_t enclave_ra_encryptWithAES(sgx_status_t *get_keys_ret,
 	sgx_ra_context_t ctx)
 {
-	sgx_status_t aes_128_ret;
+
+  // Test return value
+  // return SGX_ERROR_UNEXPECTED;
+	sgx_status_t aes_128_cmac_ret;
 	sgx_ra_key_128_t k;
+  sgx_status_t aes_128_enc_ret;
 
 	// First get the requested key which is one of:
 	//  * SGX_RA_KEY_MK
@@ -200,16 +204,42 @@ sgx_status_t enclave_ra_encryptWithAES(sgx_status_t *get_keys_ret,
 	if ( *get_keys_ret != SGX_SUCCESS ) return *get_keys_ret;
 
   uint8_t plaintext = 42;
+  uint32_t plaintext_len = 1;
+  uint8_t ciphertext[128];
+
+  unsigned char* p_iv = (unsigned char *) "012345678901";
+  uint32_t iv_len = 12;
+
+  uint8_t *p_aad = NULL;
+  uint32_t aad_len = 0;
+
+  sgx_aes_gcm_128bit_tag_t *p_out_mac;
+
   sgx_cmac_128bit_tag_t *p_mac;
 
-  aes_128_ret = sgx_rijndael128_cmac_msg(&k, &plaintext, 1, p_mac);
-  if ( aes_128_ret != SGX_SUCCESS ) return aes_128_ret;
+  aes_128_cmac_ret = sgx_rijndael128_cmac_msg(&k, &plaintext, 1, p_mac);
+  if ( aes_128_cmac_ret != SGX_SUCCESS ) return aes_128_cmac_ret;
+
+  // Encrypt data using AES 128-bit in GCM mode using
+  // SGX-provided cryptographic library
+  aes_128_enc_ret = sgx_rijndael128GCM_encrypt(&k,
+             &plaintext,
+             plaintext_len,
+             ciphertext,
+             p_iv,
+             iv_len,
+             p_aad,
+             aad_len,
+             p_out_mac
+        );
+
+  if ( aes_128_enc_ret != SGX_SUCCESS ) return aes_128_enc_ret;
 
 	/* Let's be thorough */
 
 	memset(k, 0, sizeof(k));
 
-	return aes_128_ret;
+	return aes_128_enc_ret;
 }
 
 sgx_status_t enclave_ra_close(sgx_ra_context_t ctx)
