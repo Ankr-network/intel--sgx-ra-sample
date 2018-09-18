@@ -883,6 +883,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			&key_status,
 			&decipheredtext,
 			(uint8_t*) ciphertext,
+			plaintext_ciphertext_len,
 			&p_mac,
 			ra_ctx
 		);

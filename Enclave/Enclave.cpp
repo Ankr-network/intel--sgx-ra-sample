@@ -243,6 +243,7 @@ sgx_status_t enclave_ra_decryptWithAES(
   sgx_status_t *get_keys_ret,
   uint8_t* decipheredtext,
   uint8_t ciphertext[128],
+  uint32_t ciphertext_len,
   sgx_aes_gcm_128bit_tag_t *p_mac,
 	sgx_ra_context_t ctx
 )
