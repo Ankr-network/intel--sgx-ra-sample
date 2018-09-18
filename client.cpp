@@ -907,6 +907,10 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 		msgio->send(ciphertext, plaintext_ciphertext_len);
 
+		sleep(3);
+
+		msgio->send(p_mac, 16);
+
 		// if ( verbose ) {
 		// 	eprintf("SHA256(MK) = ");
 		// 	print_hexstring(stderr, mkhash, sizeof(mkhash));

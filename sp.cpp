@@ -849,6 +849,19 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 			}
 
 			eprintf("Ciphertext from remote SGX enclave: %s\n", hexstring(p_ciphertext_from_sgx, ciphertext_from_sgx_len/2));
+
+			char *p_mac;
+			size_t p_mac_len;
+
+			read_ret = msgio->read((void**) &p_mac, &p_mac_len);
+
+			if (read_ret != 1) {
+				eprintf("Error while receiving MAC from remote SGX enclave: %d\n", read_ret);
+			} else {
+				eprintf("Successfully received %d bytes for MAC from remote SGX enclave.\n", p_mac_len);
+			}
+
+			eprintf("MAC from remote SGX enclave: %s\n", hexstring(p_mac, p_mac_len/2));
 		}
 
 	} else {
