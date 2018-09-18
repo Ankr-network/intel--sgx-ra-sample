@@ -848,7 +848,7 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 				eprintf("Successfully received %d bytes from remote SGX enclave.\n", ciphertext_from_sgx_len);
 			}
 
-			eprintf("Ciphertext from remote SGX enclave: %s\n", hexstring(p_ciphertext_from_sgx, ciphertext_from_sgx_len));
+			eprintf("Ciphertext from remote SGX enclave: %s\n", hexstring(p_ciphertext_from_sgx, ciphertext_from_sgx_len/2));
 		}
 
 	} else {
