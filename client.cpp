@@ -831,6 +831,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		}
 
 		uint8_t plaintext = 41;
+		uint32_t plaintext_ciphertext_len = 1;
 
 		if ( debug ) eprintf("+++ encrypting w/in enclave using SK\n");
 		status = enclave_ra_encryptWithAES(
@@ -842,6 +843,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			(uint8_t*) ciphertext,
 			&p_mac,
 			&plaintext,
+			plaintext_ciphertext_len,
 			ra_ctx
 		);
 
@@ -870,7 +872,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		}
 
 		if (verbose) {
-			eprintf("Ciphertext: %s\n", hexstring(ciphertext, strlen(ciphertext)));
+			eprintf("Ciphertext: %s\n", hexstring(ciphertext, plaintext_ciphertext_len));
 		}
 
 		if ( debug ) eprintf("+++ decrypting w/in enclave using SK\n");
