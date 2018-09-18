@@ -809,6 +809,7 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 			}
 
 			// Encrypt and decrypt based on
+			// https://wiki.openssl.org/index.php/EVP_Authenticated_Encryption_and_Decryption
 			// https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
 
 			unsigned char* key = mk;
