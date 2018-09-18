@@ -115,10 +115,16 @@ int get_attestation_report(IAS_Connection *ias, int version,
 int get_proxy(char **server, unsigned int *port, const char *url);
 
 int encryptWithAES(unsigned char *plaintext, int plaintext_len, unsigned char *key,
-  unsigned char *iv, unsigned char *ciphertext);
+  unsigned char *iv, unsigned char *ciphertext, unsigned char *tag);
 
-int decryptWithAES(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
-  unsigned char *iv, unsigned char *plaintext);
+// int encryptWithAES(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+//   unsigned char *iv, unsigned char *ciphertext);
+
+int decryptWithAES(unsigned char *ciphertext, int ciphertext_len, unsigned char *tag,
+	unsigned char *key, unsigned char *iv, unsigned char *plaintext);
+
+// int decryptWithAES(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
+//   unsigned char *iv, unsigned char *plaintext);
 
 char debug = 0;
 char verbose = 0;
@@ -807,20 +813,21 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 
 			unsigned char* key = mk;
 			// FIXME: Use random (not necessarily secret) IV
-		  unsigned char* iv = (unsigned char *) "0123456789012345";
+		  unsigned char* iv = (unsigned char *) "012345678901";
 			unsigned char* plaintext = (unsigned char*) "Hello, Ankr!";
 			unsigned char ciphertext[128];
+			unsigned char tag[128];
 			unsigned char decryptedtext[128];
 			int decryptedtext_len, ciphertext_len;
 
 			eprintf("Plaintext: %s\n", plaintext);
 
 			ciphertext_len = encryptWithAES(plaintext, strlen ((char *)plaintext), key, iv,
-      									ciphertext);
+      									ciphertext, tag);
 
 			eprintf("Ciphertext: %s\n", hexstring(ciphertext, ciphertext_len));
 
-			decryptedtext_len = decryptWithAES(ciphertext, ciphertext_len, key, iv,
+			decryptedtext_len = decryptWithAES(ciphertext, ciphertext_len, tag, key, iv,
     												decryptedtext);
 
 			decryptedtext[decryptedtext_len] = '\0';
@@ -843,6 +850,59 @@ void handleErrors(void)
 }
 
 int encryptWithAES(unsigned char *plaintext, int plaintext_len, unsigned char *key,
+  unsigned char *iv, unsigned char *ciphertext, unsigned char *tag)
+{
+	EVP_CIPHER_CTX *ctx;
+
+	int len;
+
+	int ciphertext_len;
+
+
+	/* Create and initialise the context */
+	if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+	/* Initialise the encryption operation. */
+	if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_128_gcm(), NULL, NULL, NULL))
+		handleErrors();
+
+	// /* Set IV length if default 12 bytes (96 bits) is not appropriate */
+	// if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, iv_len, NULL))
+	// 	handleErrors();
+
+	/* Initialise key and IV */
+	if(1 != EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv)) handleErrors();
+
+	// /* Provide any AAD data. This can be called zero or more times as
+	//  * required
+	//  */
+	// if(1 != EVP_EncryptUpdate(ctx, NULL, &len, aad, aad_len))
+	// 	handleErrors();
+
+	/* Provide the message to be encrypted, and obtain the encrypted output.
+	 * EVP_EncryptUpdate can be called multiple times if necessary
+	 */
+	if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
+		handleErrors();
+	ciphertext_len = len;
+
+	/* Finalise the encryption. Normally ciphertext bytes may be written at
+	 * this stage, but this does not occur in GCM mode
+	 */
+	if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len)) handleErrors();
+	ciphertext_len += len;
+
+	/* Get the tag */
+	if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag))
+		handleErrors();
+
+	/* Clean up */
+	EVP_CIPHER_CTX_free(ctx);
+
+	return ciphertext_len;
+}
+
+int encryptWithAESCBC(unsigned char *plaintext, int plaintext_len, unsigned char *key,
   unsigned char *iv, unsigned char *ciphertext)
 {
   EVP_CIPHER_CTX *ctx;
@@ -881,7 +941,67 @@ int encryptWithAES(unsigned char *plaintext, int plaintext_len, unsigned char *k
   return ciphertext_len;
 }
 
-int decryptWithAES(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
+int decryptWithAES(unsigned char *ciphertext, int ciphertext_len, unsigned char *tag,
+	unsigned char *key, unsigned char *iv, unsigned char *plaintext)
+{
+	EVP_CIPHER_CTX *ctx;
+	int len;
+	int plaintext_len;
+	int ret;
+
+	/* Create and initialise the context */
+	if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+	/* Initialise the decryption operation. */
+	if(!EVP_DecryptInit_ex(ctx, EVP_aes_128_gcm(), NULL, NULL, NULL))
+		handleErrors();
+
+	// /* Set IV length. Not necessary if this is 12 bytes (96 bits) */
+	// if(!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, iv_len, NULL))
+	// 	handleErrors();
+
+	/* Initialise key and IV */
+	if(!EVP_DecryptInit_ex(ctx, NULL, NULL, key, iv)) handleErrors();
+
+	// /* Provide any AAD data. This can be called zero or more times as
+	//  * required
+	//  */
+	// if(!EVP_DecryptUpdate(ctx, NULL, &len, aad, aad_len))
+	// 	handleErrors();
+
+	/* Provide the message to be decrypted, and obtain the plaintext output.
+	 * EVP_DecryptUpdate can be called multiple times if necessary
+	 */
+	if(!EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
+		handleErrors();
+	plaintext_len = len;
+
+	/* Set expected tag value. Works in OpenSSL 1.0.1d and later */
+	if(!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, 16, tag))
+		handleErrors();
+
+	/* Finalise the decryption. A positive return value indicates success,
+	 * anything else is a failure - the plaintext is not trustworthy.
+	 */
+	ret = EVP_DecryptFinal_ex(ctx, plaintext + len, &len);
+
+	/* Clean up */
+	EVP_CIPHER_CTX_free(ctx);
+
+	if(ret > 0)
+	{
+		/* Success */
+		plaintext_len += len;
+		return plaintext_len;
+	}
+	else
+	{
+		/* Verify failed */
+		return -1;
+	}
+}
+
+int decryptWithAESCBC(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
   unsigned char *iv, unsigned char *plaintext)
 {
   EVP_CIPHER_CTX *ctx;
