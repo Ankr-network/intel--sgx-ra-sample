@@ -798,6 +798,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		sgx_status_t key_status, sha_status, aes_128_dec_status, aes_128_enc_status, aes_status;
 		sgx_sha256_hash_t mkhash, skhash;
 		char ciphertext[128];
+		sgx_aes_gcm_128bit_tag_t p_mac;
 
 		// First the MK
 
@@ -836,6 +837,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			&aes_128_enc_status,
 			&key_status,
 			(uint8_t*) ciphertext,
+			&p_mac,
 			ra_ctx
 		);
 
@@ -852,6 +854,12 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			aes_128_enc_status);
 
 		if ( debug ) eprintf("+++ sgx_ra_get_keys (SK) ret= 0x%04x\n", key_status);
+
+		if (verbose) {
+			eprintf("MAC: ");
+			print_hexstring(stderr, p_mac, sizeof(p_mac));
+			eprintf("\n");
+		}
 
 		if (verbose) {
 			eprintf("Ciphertext: %s\n", hexstring(ciphertext, strlen(ciphertext)));

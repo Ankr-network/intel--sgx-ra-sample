@@ -53,6 +53,7 @@ enclave {
 			[out] sgx_status_t *aes_128_enc_status,
 			[out] sgx_status_t *get_keys_status,
 			[out] uint8_t ciphertext[128],
+			[out] sgx_aes_gcm_128bit_tag_t *p_mac,
 			sgx_ra_context_t ctx
 		);
 
