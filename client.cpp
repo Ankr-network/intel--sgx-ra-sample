@@ -830,6 +830,8 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			eprintf("\n");
 		}
 
+		uint8_t plaintext = 41;
+
 		if ( debug ) eprintf("+++ encrypting w/in enclave using SK\n");
 		status = enclave_ra_encryptWithAES(
 			eid,
@@ -839,8 +841,13 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			&key_status,
 			(uint8_t*) ciphertext,
 			&p_mac,
+			&plaintext,
 			ra_ctx
 		);
+
+		if (verbose) {
+			eprintf("plaintext: %d\n", plaintext);
+		}
 
 		if ( debug ) eprintf("+++ ECALL enclave_ra_encryptWithAES ret= 0x%04x\n",
 			status);

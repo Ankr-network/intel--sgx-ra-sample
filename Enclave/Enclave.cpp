@@ -191,6 +191,7 @@ sgx_status_t enclave_ra_encryptWithAES(
   sgx_status_t *get_keys_ret,
   uint8_t ciphertext[128],
   sgx_aes_gcm_128bit_tag_t *p_out_mac,
+  uint8_t *plaintext,
   sgx_ra_context_t ctx
 )
 {
@@ -208,7 +209,7 @@ sgx_status_t enclave_ra_encryptWithAES(
 	*get_keys_ret= sgx_ra_get_keys(ctx, SGX_RA_KEY_SK, &k);
 	if ( *get_keys_ret != SGX_SUCCESS ) return *get_keys_ret;
 
-  uint8_t plaintext = 42;
+  // uint8_t plaintext = 42;
   uint32_t plaintext_len = 1;
   // uint8_t ciphertext[128];
   uint8_t decipheredtext = 0;
@@ -231,7 +232,7 @@ sgx_status_t enclave_ra_encryptWithAES(
   // Both sgx_aes_gcm_128bit_key_t and sgx_ra_key_128_t are uint8_t[16] (128 bit)
   *aes_128_enc_ret = sgx_rijndael128GCM_encrypt(
                       &k,
-                      &plaintext,
+                      plaintext,
                       plaintext_len,
                       ciphertext,
                       p_iv,
@@ -257,7 +258,7 @@ sgx_status_t enclave_ra_encryptWithAES(
 
   if ( *aes_128_dec_ret != SGX_SUCCESS ) return *aes_128_dec_ret;
 
-  if (plaintext != decipheredtext) return SGX_ERROR_UNEXPECTED;
+  if (*plaintext != decipheredtext) return SGX_ERROR_UNEXPECTED;
 
 	/* Let's be thorough */
 
