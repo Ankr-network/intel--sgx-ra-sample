@@ -798,6 +798,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		sgx_status_t key_status, sha_status, aes_128_dec_status, aes_128_enc_status, aes_status;
 		sgx_sha256_hash_t mkhash, skhash;
 		char ciphertext[128];
+		uint8_t decipheredtext;
 		sgx_aes_gcm_128bit_tag_t p_mac;
 
 		// First the MK
@@ -863,6 +864,33 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 		if (verbose) {
 			eprintf("Ciphertext: %s\n", hexstring(ciphertext, strlen(ciphertext)));
+		}
+
+		if ( debug ) eprintf("+++ decrypting w/in enclave using SK\n");
+		status = enclave_ra_decryptWithAES(
+			eid,
+			&aes_status,
+			&aes_128_dec_status,
+			&key_status,
+			&decipheredtext,
+			(uint8_t*) ciphertext,
+			&p_mac,
+			ra_ctx
+		);
+
+		if ( debug ) eprintf("+++ ECALL enclave_ra_decryptWithAES ret= 0x%04x\n",
+			status);
+
+		if ( debug ) eprintf("+++ ECALL enclave_ra_decryptWithAES retval= 0x%04x\n",
+			aes_status);
+
+		if ( debug ) eprintf("+++ aes_128_dec_status ret= 0x%04x\n",
+			aes_128_dec_status);
+
+		if ( debug ) eprintf("+++ sgx_ra_get_keys (SK) ret= 0x%04x\n", key_status);
+
+		if (verbose) {
+			eprintf("decipheredtext: %d\n", decipheredtext);
 		}
 		// if ( verbose ) {
 		// 	eprintf("SHA256(MK) = ");
