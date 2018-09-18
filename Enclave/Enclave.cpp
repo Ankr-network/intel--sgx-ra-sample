@@ -191,8 +191,8 @@ sgx_status_t enclave_ra_encryptWithAES(
   sgx_status_t *get_keys_ret,
   unsigned char ciphertext[128],
   sgx_aes_gcm_128bit_tag_t *p_out_mac,
-  uint8_t *plaintext,
-  uint32_t plaintext_len,
+  unsigned char* plaintext,
+  uint32_t plaintext_length,
   sgx_ra_context_t ctx
 )
 {
@@ -206,8 +206,6 @@ sgx_status_t enclave_ra_encryptWithAES(
 	*get_keys_ret= sgx_ra_get_keys(ctx, SGX_RA_KEY_SK, &k);
 	if ( *get_keys_ret != SGX_SUCCESS ) return *get_keys_ret;
 
-  uint8_t decipheredtext = 0;
-
   unsigned char* p_iv = (unsigned char *) "012345678901";
   uint32_t iv_len = 12;
 
@@ -220,7 +218,7 @@ sgx_status_t enclave_ra_encryptWithAES(
   *aes_128_enc_ret = sgx_rijndael128GCM_encrypt(
                       &k,
                       plaintext,
-                      plaintext_len,
+                      plaintext_length,
                       ciphertext,
                       p_iv,
                       iv_len,
@@ -241,8 +239,8 @@ sgx_status_t enclave_ra_encryptWithAES(
 sgx_status_t enclave_ra_decryptWithAES(
   sgx_status_t *aes_128_dec_ret,
   sgx_status_t *get_keys_ret,
-  uint8_t* decipheredtext,
-  uint8_t ciphertext[128],
+  unsigned char decipheredtext[128],
+  unsigned char ciphertext[128],
   uint32_t ciphertext_len,
   sgx_aes_gcm_128bit_tag_t *p_mac,
 	sgx_ra_context_t ctx
@@ -267,7 +265,7 @@ sgx_status_t enclave_ra_decryptWithAES(
   *aes_128_dec_ret = sgx_rijndael128GCM_decrypt(
              &k,
              ciphertext,
-             strlen((char*) ciphertext),
+             ciphertext_len,
              decipheredtext,
              p_iv,
              iv_len,

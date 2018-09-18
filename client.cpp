@@ -798,7 +798,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		sgx_status_t key_status, sha_status, aes_128_dec_status, aes_128_enc_status, aes_status;
 		sgx_sha256_hash_t mkhash, skhash;
 		unsigned char ciphertext[128];
-		uint8_t decipheredtext;
+		unsigned char decipheredtext[128];
 		sgx_aes_gcm_128bit_tag_t p_mac;
 
 		// First the MK
@@ -830,8 +830,8 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			eprintf("\n");
 		}
 
-		uint8_t plaintext = 41;
-		uint32_t plaintext_ciphertext_len = 1;
+		unsigned char* plaintext = (unsigned char*) "Hello, Ankr!";
+		uint32_t plaintext_ciphertext_len = strlen((char*) plaintext);
 
 		if ( debug ) eprintf("+++ encrypting w/in enclave using SK\n");
 		status = enclave_ra_encryptWithAES(
@@ -842,13 +842,13 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			&key_status,
 			ciphertext,
 			&p_mac,
-			&plaintext,
+			plaintext,
 			plaintext_ciphertext_len,
 			ra_ctx
 		);
 
 		if (verbose) {
-			eprintf("plaintext: %d\n", plaintext);
+			eprintf("plaintext: %s\n", plaintext);
 		}
 
 		if ( debug ) eprintf("+++ ECALL enclave_ra_encryptWithAES ret= 0x%04x\n",
@@ -881,8 +881,8 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			&aes_status,
 			&aes_128_dec_status,
 			&key_status,
-			&decipheredtext,
-			(uint8_t*) ciphertext,
+			decipheredtext,
+			ciphertext,
 			plaintext_ciphertext_len,
 			&p_mac,
 			ra_ctx
@@ -900,7 +900,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		if ( debug ) eprintf("+++ sgx_ra_get_keys (SK) ret= 0x%04x\n", key_status);
 
 		if (verbose) {
-			eprintf("decipheredtext: %d\n", decipheredtext);
+			eprintf("decipheredtext: %s\n", decipheredtext);
 		}
 
 		eprintf("Secure communication w/ the ISV.\n");
