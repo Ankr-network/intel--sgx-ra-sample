@@ -797,7 +797,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	if ( enclaveTrusted == Trusted ) {
 		sgx_status_t key_status, sha_status, aes_128_dec_status, aes_128_enc_status, aes_status;
 		sgx_sha256_hash_t mkhash, skhash;
-		char ciphertext[128];
+		unsigned char ciphertext[128];
 		uint8_t decipheredtext;
 		sgx_aes_gcm_128bit_tag_t p_mac;
 
@@ -840,7 +840,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			&aes_128_dec_status,
 			&aes_128_enc_status,
 			&key_status,
-			(uint8_t*) ciphertext,
+			ciphertext,
 			&p_mac,
 			&plaintext,
 			plaintext_ciphertext_len,

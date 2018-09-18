@@ -189,7 +189,7 @@ sgx_status_t enclave_ra_encryptWithAES(
   sgx_status_t *aes_128_dec_ret,
   sgx_status_t *aes_128_enc_ret,
   sgx_status_t *get_keys_ret,
-  uint8_t ciphertext[128],
+  unsigned char ciphertext[128],
   sgx_aes_gcm_128bit_tag_t *p_out_mac,
   uint8_t *plaintext,
   uint32_t plaintext_len,
