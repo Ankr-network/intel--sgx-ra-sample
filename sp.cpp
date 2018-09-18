@@ -837,19 +837,18 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 			eprintf("Secure communication w/ the remote SGX enclave.\n");
 
 
-			char *p_plaintext_from_sgx;
-			size_t plaintext_from_sgx_len = -1;
+			char *p_ciphertext_from_sgx;
+			size_t ciphertext_from_sgx_len = -1;
 
-			int read_ret = msgio->read((void**) &p_plaintext_from_sgx, &plaintext_from_sgx_len);
+			int read_ret = msgio->read((void**) &p_ciphertext_from_sgx, &ciphertext_from_sgx_len);
 
-			char plaintext_from_sgx = *p_plaintext_from_sgx;
 			if (read_ret != 1) {
 				eprintf("Error while receiving from remote SGX enclave: %d\n", read_ret);
 			} else {
-				eprintf("Successfully received %d bytes from remote SGX enclave.\n", plaintext_from_sgx_len);
+				eprintf("Successfully received %d bytes from remote SGX enclave.\n", ciphertext_from_sgx_len);
 			}
 
-			eprintf("Plaintext from remote SGX enclave: +++%c---\n", *p_plaintext_from_sgx);
+			eprintf("Ciphertext from remote SGX enclave: %s\n", hexstring(p_ciphertext_from_sgx, ciphertext_from_sgx_len));
 		}
 
 	} else {

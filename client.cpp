@@ -906,7 +906,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		eprintf("Secure communication w/ the ISV.\n");
 
 		char c = 'g';
-		msgio->send(&c, 1);
+		msgio->send(ciphertext, plaintext_ciphertext_len);
 
 		// if ( verbose ) {
 		// 	eprintf("SHA256(MK) = ");
