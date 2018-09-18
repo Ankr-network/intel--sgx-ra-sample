@@ -819,6 +819,7 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 			unsigned char ciphertext[128];
 			unsigned char tag[128];
 			unsigned char decryptedtext[128];
+			unsigned char decryptedtext_from_sgx[128];
 			int decryptedtext_len, ciphertext_len;
 
 			eprintf("Plaintext: %s\n", plaintext);
@@ -837,7 +838,7 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 			eprintf("Secure communication w/ the remote SGX enclave.\n");
 
 
-			char *p_ciphertext_from_sgx;
+			unsigned char *p_ciphertext_from_sgx;
 			size_t ciphertext_from_sgx_len = -1;
 
 			int read_ret = msgio->read((void**) &p_ciphertext_from_sgx, &ciphertext_from_sgx_len);
@@ -850,7 +851,7 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 
 			eprintf("Ciphertext from remote SGX enclave: %s\n", hexstring(p_ciphertext_from_sgx, ciphertext_from_sgx_len/2));
 
-			char *p_mac;
+			unsigned char *p_mac;
 			size_t p_mac_len;
 
 			read_ret = msgio->read((void**) &p_mac, &p_mac_len);
@@ -862,6 +863,21 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 			}
 
 			eprintf("MAC from remote SGX enclave: %s\n", hexstring(p_mac, p_mac_len/2));
+
+
+			int decryptedtext_from_sgx_len = decryptWithAES(
+														p_ciphertext_from_sgx,
+														ciphertext_from_sgx_len/2,
+														p_mac, key, iv,
+    												decryptedtext_from_sgx);
+
+			if (decryptedtext_from_sgx_len == -1) {
+				eprintf("Error while decrypting text from SGX: %d\n", decryptedtext_from_sgx_len);
+			} else {
+				eprintf("Decrypted %d characters of text from SGX\n", decryptedtext_from_sgx_len);
+				decryptedtext_from_sgx[decryptedtext_from_sgx_len] = '\0';
+				eprintf("Decrypted text from SGX: %s\n", decryptedtext_from_sgx);
+			}
 		}
 
 	} else {
