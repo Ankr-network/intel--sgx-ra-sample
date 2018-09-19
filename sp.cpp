@@ -812,7 +812,7 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 			// https://wiki.openssl.org/index.php/EVP_Authenticated_Encryption_and_Decryption
 			// https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
 
-			unsigned char* key = mk;
+			unsigned char* key = sk;
 			// FIXME: Use random (not necessarily secret) IV
 		  unsigned char* iv = (unsigned char *) "012345678901";
 			unsigned char* plaintext = (unsigned char*) "Hello, Ankr!";
