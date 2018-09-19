@@ -911,6 +911,32 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 		msgio->send(p_mac, 16);
 
+
+
+		unsigned char *p_ciphertext_from_sp;
+		size_t ciphertext_from_sp_len = -1;
+
+		int read_ret = msgio->read((void**) &p_ciphertext_from_sp, &ciphertext_from_sp_len);
+
+		if (read_ret != 1) {
+			eprintf("Error while receiving from Ankr ISV SP: %d\n", read_ret);
+		} else {
+			eprintf("Successfully received %d bytes from Ankr ISV SP.\n", ciphertext_from_sp_len);
+		}
+
+		eprintf("Ciphertext from Ankr ISV SP: %s\n", hexstring(p_ciphertext_from_sp, ciphertext_from_sp_len/2));
+
+		unsigned char *p_mac_from_sp;
+		size_t p_mac_from_sp_len;
+
+		read_ret = msgio->read((void**) &p_mac_from_sp, &p_mac_from_sp_len);
+
+		if (read_ret != 1) {
+			eprintf("Error while receiving MAC from Ankr ISV SP: %d\n", read_ret);
+		} else {
+			eprintf("Successfully received %d bytes for MAC from Ankr ISV SP.\n", p_mac_from_sp_len);
+		}
+
 		// if ( verbose ) {
 		// 	eprintf("SHA256(MK) = ");
 		// 	print_hexstring(stderr, mkhash, sizeof(mkhash));

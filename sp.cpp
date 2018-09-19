@@ -815,7 +815,7 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 			unsigned char* key = sk;
 			// FIXME: Use random (not necessarily secret) IV
 		  unsigned char* iv = (unsigned char *) "012345678901";
-			unsigned char* plaintext = (unsigned char*) "Hello, Ankr!";
+			unsigned char* plaintext = (unsigned char*) "Hello, SGX! --Ankr ISV/SP";
 			unsigned char ciphertext[128];
 			unsigned char tag[128];
 			unsigned char decryptedtext[128];
@@ -878,6 +878,17 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 				decryptedtext_from_sgx[decryptedtext_from_sgx_len] = '\0';
 				eprintf("Decrypted text from SGX: %s\n", decryptedtext_from_sgx);
 			}
+
+			// Secure communication from the Ankr ISV SP to the SGX enclave
+
+			eprintf("Secure communication from the Ankr ISV SP to the SGX enclave.\n");
+
+			msgio->send(ciphertext, ciphertext_len);
+
+			sleep(3);
+
+			msgio->send(tag, 16);
+
 		}
 
 	} else {
