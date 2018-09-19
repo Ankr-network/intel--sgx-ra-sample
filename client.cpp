@@ -911,10 +911,11 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 		msgio->send(p_mac, 16);
 
-
+		eprintf("Secure communication from Ankr ISV SP.\n");
 
 		unsigned char *p_ciphertext_from_sp;
 		size_t ciphertext_from_sp_len = -1;
+		unsigned char decipheredtext_from_sp[128];
 
 		int read_ret = msgio->read((void**) &p_ciphertext_from_sp, &ciphertext_from_sp_len);
 
@@ -934,7 +935,42 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		if (read_ret != 1) {
 			eprintf("Error while receiving MAC from Ankr ISV SP: %d\n", read_ret);
 		} else {
-			eprintf("Successfully received %d bytes for MAC from Ankr ISV SP.\n", p_mac_from_sp_len);
+			eprintf("Successfully received %d bytes for MAC from Ankr ISV SP.\n", p_mac_from_sp_len/2);
+		}
+
+		eprintf("MAC from Ankr ISV SP: %s\n", hexstring(p_mac_from_sp, p_mac_from_sp_len/2));
+
+		if ( debug ) eprintf("+++ decrypting w/in enclave using SK\n");
+
+		sgx_aes_gcm_128bit_tag_t tag;
+
+		memcpy(tag, p_mac_from_sp, p_mac_from_sp_len/2);
+
+		status = enclave_ra_decryptWithAES(
+			eid,
+			&aes_status,
+			&aes_128_dec_status,
+			&key_status,
+			decipheredtext_from_sp,
+			p_ciphertext_from_sp,
+			ciphertext_from_sp_len/2,
+			&tag,
+			ra_ctx
+		);
+
+		if ( debug ) eprintf("+++ ECALL enclave_ra_decryptWithAES ret= 0x%04x\n",
+			status);
+
+		if ( debug ) eprintf("+++ ECALL enclave_ra_decryptWithAES retval= 0x%04x\n",
+			aes_status);
+
+		if ( debug ) eprintf("+++ aes_128_dec_status ret= 0x%04x\n",
+			aes_128_dec_status);
+
+		if ( debug ) eprintf("+++ sgx_ra_get_keys (SK) ret= 0x%04x\n", key_status);
+
+		if (verbose) {
+			eprintf("decipheredtext: %s\n", decipheredtext_from_sp);
 		}
 
 		// if ( verbose ) {
