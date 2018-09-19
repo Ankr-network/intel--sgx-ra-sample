@@ -29,10 +29,12 @@ Follow all the instructions in the next sections of the Intel SGX RA example to 
 
 Then follow these additional instructions to run this version of the example after you've registered w/ Intel:
 * Paste the self-signed certificate (`domain.crt`) and private key (`domain.key`) that you registered w/ Intel into the `certs` directory in this repo
-* Make a copy of `settings` called `settings.local` and set the following parameters:
+* Paste the Intel signing CA cert that you received from Intel upon registration into the `certs` directory in this repo
+* Make a copy of `settings` called `settings.local` and find and set the following parameters:
   * `SPID=<SPID provided by Intel upon registration>`
   * `IAS_CLIENT_CERT_FILE=certs/domain.crt`
   * `IAS_CLIENT_KEY_FILE=certs/domain.key`
+  * `IAS_REPORT_SIGNING_CA_FILE=certs/AttestationReportSigningCACert.pem`
 * After building the application, change the `run-server` script to load the settings from `settings.local` instead of `settings`
   * `source settings.local`
 * In one terminal, start the ISV/SP/server w/:
