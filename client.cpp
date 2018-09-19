@@ -830,7 +830,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			eprintf("\n");
 		}
 
-		unsigned char* plaintext = (unsigned char*) "Hello, Ankr!";
+		unsigned char* plaintext = (unsigned char*) "Hello, Ankr! --SGX enclave";
 		uint32_t plaintext_ciphertext_len = strlen((char*) plaintext);
 
 		if ( debug ) eprintf("+++ encrypting w/in enclave using SK\n");
