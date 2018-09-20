@@ -27,6 +27,15 @@ The application in this private fork uses the shared secret derived during the R
 
 Follow all the instructions in the next sections of the Intel SGX RA example to set up and build it.
 
+Please note that on Ubuntu Linux systems during the installation of the OpenSSL library, you need to run this command:
+```
+$ ./config --prefix=/opt/openssl/1.1.0i --openssldir=/opt/openssl/1.1.0i
+```
+instead of this command listed below in the Intel-provided documentation:
+```
+$ ./Configure --prefix=/opt/openssl/1.1.0i --openssldir=/opt/openssl/1.1.0i
+```
+
 Then follow these additional instructions to run this version of the example after you've registered w/ Intel:
 * Paste the self-signed certificate (`domain.crt`) and private key (`domain.key`) that you registered w/ Intel into the `certs` directory in this repo
 * Paste the Intel signing CA cert that you received from Intel upon registration into the `certs` directory in this repo
