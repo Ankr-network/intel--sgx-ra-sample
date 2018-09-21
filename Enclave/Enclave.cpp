@@ -70,7 +70,7 @@ static const sgx_ec256_public_t def_service_public_key = {
  */
 
 /*
- * This doesn't really need to be a C++ source file, but a bug in 
+ * This doesn't really need to be a C++ source file, but a bug in
  * 2.1.3 and earlier implementations of the SGX SDK left a stray
  * C++ symbol in libsgx_tkey_exchange.so so it won't link without
  * a C++ compiler. Just making the source C++ was the easiest way
@@ -119,7 +119,7 @@ sgx_status_t enclave_ra_init(sgx_ec256_public_t key, int b_pse,
 	sgx_status_t ra_status;
 
 	/*
-	 * If we want platform services, we must create a PSE session 
+	 * If we want platform services, we must create a PSE session
 	 * before calling sgx_ra_init()
 	 */
 
@@ -166,7 +166,7 @@ sgx_status_t enclave_ra_get_key_hash(sgx_status_t *get_keys_ret,
 	sgx_ra_key_128_t k;
 
 	// First get the requested key which is one of:
-	//  * SGX_RA_KEY_MK 
+	//  * SGX_RA_KEY_MK
 	//  * SGX_RA_KEY_SK
 	// per sgx_ra_get_keys().
 
@@ -175,7 +175,7 @@ sgx_status_t enclave_ra_get_key_hash(sgx_status_t *get_keys_ret,
 
 	/* Now generate a SHA hash */
 
-	sha_ret= sgx_sha256_msg((const uint8_t *) &k, sizeof(k), 
+	sha_ret= sgx_sha256_msg((const uint8_t *) &k, sizeof(k),
 		(sgx_sha256_hash_t *) hash); // Sigh.
 
 	/* Let's be thorough */
@@ -183,6 +183,104 @@ sgx_status_t enclave_ra_get_key_hash(sgx_status_t *get_keys_ret,
 	memset(k, 0, sizeof(k));
 
 	return sha_ret;
+}
+
+sgx_status_t enclave_ra_encryptWithAES(
+  sgx_status_t *aes_128_dec_ret,
+  sgx_status_t *aes_128_enc_ret,
+  sgx_status_t *get_keys_ret,
+  unsigned char ciphertext[128],
+  sgx_aes_gcm_128bit_tag_t *p_out_mac,
+  unsigned char* plaintext,
+  uint32_t plaintext_length,
+  sgx_ra_context_t ctx
+)
+{
+	sgx_ra_key_128_t k;
+
+	// First get the requested key which is one of:
+	//  * SGX_RA_KEY_MK
+	//  * SGX_RA_KEY_SK
+	// per sgx_ra_get_keys().
+
+	*get_keys_ret= sgx_ra_get_keys(ctx, SGX_RA_KEY_SK, &k);
+	if ( *get_keys_ret != SGX_SUCCESS ) return *get_keys_ret;
+
+  unsigned char* p_iv = (unsigned char *) "012345678901";
+  uint32_t iv_len = 12;
+
+  uint8_t *p_aad = NULL;
+  uint32_t aad_len = 0;
+
+  // Encrypt data using AES 128-bit in GCM mode using
+  // SGX-provided cryptographic library
+  // Both sgx_aes_gcm_128bit_key_t and sgx_ra_key_128_t are uint8_t[16] (128 bit)
+  *aes_128_enc_ret = sgx_rijndael128GCM_encrypt(
+                      &k,
+                      plaintext,
+                      plaintext_length,
+                      ciphertext,
+                      p_iv,
+                      iv_len,
+                      p_aad,
+                      aad_len,
+                      p_out_mac
+                    );
+
+  if ( *aes_128_enc_ret != SGX_SUCCESS ) return *aes_128_enc_ret;
+
+	/* Let's be thorough */
+
+	memset(k, 0, sizeof(k));
+
+	return *aes_128_dec_ret;
+}
+
+sgx_status_t enclave_ra_decryptWithAES(
+  sgx_status_t *aes_128_dec_ret,
+  sgx_status_t *get_keys_ret,
+  unsigned char decipheredtext[128],
+  unsigned char ciphertext[128],
+  uint32_t ciphertext_len,
+  sgx_aes_gcm_128bit_tag_t *p_mac,
+	sgx_ra_context_t ctx
+)
+{
+	sgx_ra_key_128_t k;
+
+	// First get the requested key which is one of:
+	//  * SGX_RA_KEY_MK
+	//  * SGX_RA_KEY_SK
+	// per sgx_ra_get_keys().
+
+	*get_keys_ret= sgx_ra_get_keys(ctx, SGX_RA_KEY_SK, &k);
+	if ( *get_keys_ret != SGX_SUCCESS ) return *get_keys_ret;
+
+  unsigned char* p_iv = (unsigned char *) "012345678901";
+  uint32_t iv_len = 12;
+
+  uint8_t *p_aad = NULL;
+  uint32_t aad_len = 0;
+
+  *aes_128_dec_ret = sgx_rijndael128GCM_decrypt(
+             &k,
+             ciphertext,
+             ciphertext_len,
+             decipheredtext,
+             p_iv,
+             iv_len,
+             p_aad,
+             aad_len,
+             p_mac
+        );
+
+  if ( *aes_128_dec_ret != SGX_SUCCESS ) return *aes_128_dec_ret;
+
+  /* Let's be thorough */
+
+	memset(k, 0, sizeof(k));
+
+	return *aes_128_dec_ret;
 }
 
 sgx_status_t enclave_ra_close(sgx_ra_context_t ctx)

@@ -155,12 +155,12 @@ int main (int argc, char *argv[])
 
 	localtime_s(&lt, &timeT);
 #endif
-	fprintf(fplog, "%4d-%02d-%02d %02d:%02d:%02d\n", 
-		lt.tm_year + 1900, 
-		lt.tm_mon + 1, 
-		lt.tm_mday,  
-		lt.tm_hour, 
-		lt.tm_min, 
+	fprintf(fplog, "%4d-%02d-%02d %02d:%02d:%02d\n",
+		lt.tm_year + 1900,
+		lt.tm_mon + 1,
+		lt.tm_mday,
+		lt.tm_hour,
+		lt.tm_min,
 		lt.tm_sec);
 	divider(fplog);
 
@@ -170,7 +170,7 @@ int main (int argc, char *argv[])
 
 	static struct option long_opt[] =
 	{
-		{"help",		no_argument,		0, 'h'},		
+		{"help",		no_argument,		0, 'h'},
 		{"debug",		no_argument,		0, 'd'},
 		{"epid-gid",	no_argument,		0, 'e'},
 		{"pse-manifest",
@@ -218,7 +218,7 @@ int main (int argc, char *argv[])
 				fprintf(stderr, "%s: ", optarg);
 				crypto_perror("load_key_from_file");
 				exit(1);
-			} 
+			}
 
 			if ( ! key_to_sgx_ec256(&config.pubkey, service_public_key) ) {
 				fprintf(stderr, "%s: ", optarg);
@@ -344,7 +344,7 @@ int main (int argc, char *argv[])
 			perror("malloc");
 			return 1;
 		}
-		
+
 		/* If there's a : then we have a port, too */
 		cp= strchr(config.server, ':');
 		if ( cp != NULL ) {
@@ -379,7 +379,7 @@ int main (int argc, char *argv[])
 			fprintf(stderr, "The system may lock BIOS support, or the Platform Software is not available\n");
 			return 1;
 		}
-	} 
+	}
 #endif
 
 	/* Launch the enclave */
@@ -398,7 +398,7 @@ int main (int argc, char *argv[])
 	if ( status != SGX_SUCCESS ) {
 		fprintf(stderr, "sgx_create_enclave: %s: %08x\n",
 			ENCLAVE_NAME, status);
-		if ( status == SGX_ERROR_ENCLAVE_FILE_ACCESS ) 
+		if ( status == SGX_ERROR_ENCLAVE_FILE_ACCESS )
 			fprintf(stderr, "Did you forget to set LD_LIBRARY_PATH?\n");
 		return 1;
 	}
@@ -415,7 +415,7 @@ int main (int argc, char *argv[])
 		return 1;
 	}
 
-     
+
 	close_logfile(fplog);
 }
 
@@ -493,7 +493,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 	status = sgx_get_extended_epid_group_id(&msg0_extended_epid_group_id);
 	if ( status != SGX_SUCCESS ) {
-                enclave_ra_close(eid, &sgxrv, ra_ctx); 
+                enclave_ra_close(eid, &sgxrv, ra_ctx);
 		fprintf(stderr, "sgx_get_extended_epid_group_id: %08x\n", status);
 		return 1;
 	}
@@ -511,7 +511,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		divider(stderr);
 		divider(fplog);
 	}
- 
+
 	/* Generate msg1 */
 
 	status= sgx_ra_get_msg1(ra_ctx, eid, sgx_ra_get_ga, &msg1);
@@ -569,7 +569,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 	fprintf(stderr, "Waiting for msg2\n");
 
-	/* Read msg2 
+	/* Read msg2
 	 *
 	 * msg2 is variable length b/c it includes the revocation list at
 	 * the end. msg2 is malloc'd in readZ_msg do free it when done.
@@ -644,7 +644,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	msg3 = NULL;
 
 	status = sgx_ra_proc_msg2(ra_ctx, eid,
-		sgx_ra_proc_msg2_trusted, sgx_ra_get_msg3_trusted, msg2, 
+		sgx_ra_proc_msg2_trusted, sgx_ra_get_msg3_trusted, msg2,
 		sizeof(sgx_ra_msg2_t) + msg2->sig_rl_size,
 	    &msg3, &msg3_sz);
 
@@ -659,13 +659,13 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		fprintf(fplog, "sgx_ra_proc_msg2: %08x\n", status);
 
 		return 1;
-	} 
+	}
 
 	if ( debug ) {
 		fprintf(stderr, "+++ msg3_size = %u\n", msg3_sz);
 		fprintf(fplog, "+++ msg3_size = %u\n", msg3_sz);
 	}
-	                          
+
 	if ( verbose ) {
 		dividerWithText(stderr, "Msg3 Details");
 		dividerWithText(fplog, "Msg3 Details");
@@ -711,9 +711,9 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		free(msg3);
 		msg3 = NULL;
 	}
- 
+
 	/* Read Msg4 provided by Service Provider, then process */
-        
+
 	msgio->read((void **)&msg4, &msg4sz);
 
 	edividerWithText("Enclave Trust Status from Service Provider");
@@ -757,7 +757,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 		/* We have a PIB, so check to see if there are actions to take */
 		sgx_update_info_bit_t update_info;
-		sgx_status_t ret = sgx_report_attestation_status(&msg4->platformInfoBlob, 
+		sgx_status_t ret = sgx_report_attestation_status(&msg4->platformInfoBlob,
 			enclaveTrusted, &update_info);
 
 		if ( debug )  eprintf("+++ sgx_report_attestation_status ret = 0x%04x\n", ret);
@@ -782,21 +782,24 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			if( update_info.ucodeUpdate )  {
 				eprintf("  * The CPU Microcode needs to be updated.  Contact your OEM for a platform\n");
 				eprintf("    BIOS Update.\n");
-			}                                           
+			}
 			eprintf("\n");
-			edivider();      
+			edivider();
 		}
 	}
 
 	/*
 	 * If the enclave is trusted, fetch a hash of the the MK and SK from
-	 * the enclave to show proof of a shared secret with the service 
+	 * the enclave to show proof of a shared secret with the service
 	 * provider.
 	 */
 
 	if ( enclaveTrusted == Trusted ) {
-		sgx_status_t key_status, sha_status;
+		sgx_status_t key_status, sha_status, aes_128_dec_status, aes_128_enc_status, aes_status;
 		sgx_sha256_hash_t mkhash, skhash;
+		unsigned char ciphertext[128];
+		unsigned char decipheredtext[128];
+		sgx_aes_gcm_128bit_tag_t p_mac;
 
 		// First the MK
 
@@ -826,6 +829,160 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 			print_hexstring(fplog, skhash, sizeof(skhash));
 			eprintf("\n");
 		}
+
+		unsigned char* plaintext = (unsigned char*) "Hello, Ankr! --SGX enclave";
+		uint32_t plaintext_ciphertext_len = strlen((char*) plaintext);
+
+		if ( debug ) eprintf("+++ encrypting w/in enclave using SK\n");
+		status = enclave_ra_encryptWithAES(
+			eid,
+			&aes_status,
+			&aes_128_dec_status,
+			&aes_128_enc_status,
+			&key_status,
+			ciphertext,
+			&p_mac,
+			plaintext,
+			plaintext_ciphertext_len,
+			ra_ctx
+		);
+
+		if (verbose) {
+			eprintf("plaintext: %s\n", plaintext);
+		}
+
+		if ( debug ) eprintf("+++ ECALL enclave_ra_encryptWithAES ret= 0x%04x\n",
+			status);
+
+		if ( debug ) eprintf("+++ ECALL enclave_ra_encryptWithAES retval= 0x%04x\n",
+			aes_status);
+
+		if ( debug ) eprintf("+++ aes_128_dec_status ret= 0x%04x\n",
+			aes_128_dec_status);
+
+		if ( debug ) eprintf("+++ aes_128_enc_status ret= 0x%04x\n",
+			aes_128_enc_status);
+
+		if ( debug ) eprintf("+++ sgx_ra_get_keys (SK) ret= 0x%04x\n", key_status);
+
+		if (verbose) {
+			eprintf("MAC: ");
+			print_hexstring(stderr, p_mac, sizeof(p_mac));
+			eprintf("\n");
+		}
+
+		if (verbose) {
+			eprintf("Ciphertext: %s\n", hexstring(ciphertext, plaintext_ciphertext_len));
+		}
+
+		if ( debug ) eprintf("+++ decrypting w/in enclave using SK\n");
+		status = enclave_ra_decryptWithAES(
+			eid,
+			&aes_status,
+			&aes_128_dec_status,
+			&key_status,
+			decipheredtext,
+			ciphertext,
+			plaintext_ciphertext_len,
+			&p_mac,
+			ra_ctx
+		);
+
+		if ( debug ) eprintf("+++ ECALL enclave_ra_decryptWithAES ret= 0x%04x\n",
+			status);
+
+		if ( debug ) eprintf("+++ ECALL enclave_ra_decryptWithAES retval= 0x%04x\n",
+			aes_status);
+
+		if ( debug ) eprintf("+++ aes_128_dec_status ret= 0x%04x\n",
+			aes_128_dec_status);
+
+		if ( debug ) eprintf("+++ sgx_ra_get_keys (SK) ret= 0x%04x\n", key_status);
+
+		if (verbose) {
+			eprintf("decipheredtext: %s\n", decipheredtext);
+		}
+
+		eprintf("Secure communication w/ the ISV.\n");
+
+		msgio->send(ciphertext, plaintext_ciphertext_len);
+
+		sleep(3);
+
+		msgio->send(p_mac, 16);
+
+		eprintf("Secure communication from Ankr ISV SP.\n");
+
+		unsigned char *p_ciphertext_from_sp;
+		size_t ciphertext_from_sp_len = -1;
+		unsigned char decipheredtext_from_sp[128];
+
+		int read_ret = msgio->read((void**) &p_ciphertext_from_sp, &ciphertext_from_sp_len);
+
+		if (read_ret != 1) {
+			eprintf("Error while receiving from Ankr ISV SP: %d\n", read_ret);
+		} else {
+			eprintf("Successfully received %d bytes from Ankr ISV SP.\n", ciphertext_from_sp_len);
+		}
+
+		eprintf("Ciphertext from Ankr ISV SP: %s\n", hexstring(p_ciphertext_from_sp, ciphertext_from_sp_len/2));
+
+		unsigned char *p_mac_from_sp;
+		size_t p_mac_from_sp_len;
+
+		read_ret = msgio->read((void**) &p_mac_from_sp, &p_mac_from_sp_len);
+
+		if (read_ret != 1) {
+			eprintf("Error while receiving MAC from Ankr ISV SP: %d\n", read_ret);
+		} else {
+			eprintf("Successfully received %d bytes for MAC from Ankr ISV SP.\n", p_mac_from_sp_len/2);
+		}
+
+		eprintf("MAC from Ankr ISV SP: %s\n", hexstring(p_mac_from_sp, p_mac_from_sp_len/2));
+
+		if ( debug ) eprintf("+++ decrypting w/in enclave using SK\n");
+
+		sgx_aes_gcm_128bit_tag_t tag;
+
+		memcpy(tag, p_mac_from_sp, p_mac_from_sp_len/2);
+
+		status = enclave_ra_decryptWithAES(
+			eid,
+			&aes_status,
+			&aes_128_dec_status,
+			&key_status,
+			decipheredtext_from_sp,
+			p_ciphertext_from_sp,
+			ciphertext_from_sp_len/2,
+			&tag,
+			ra_ctx
+		);
+
+		if ( debug ) eprintf("+++ ECALL enclave_ra_decryptWithAES ret= 0x%04x\n",
+			status);
+
+		if ( debug ) eprintf("+++ ECALL enclave_ra_decryptWithAES retval= 0x%04x\n",
+			aes_status);
+
+		if ( debug ) eprintf("+++ aes_128_dec_status ret= 0x%04x\n",
+			aes_128_dec_status);
+
+		if ( debug ) eprintf("+++ sgx_ra_get_keys (SK) ret= 0x%04x\n", key_status);
+
+		if (verbose) {
+			eprintf("decipheredtext: %s\n", decipheredtext_from_sp);
+		}
+
+		// if ( verbose ) {
+		// 	eprintf("SHA256(MK) = ");
+		// 	print_hexstring(stderr, mkhash, sizeof(mkhash));
+		// 	print_hexstring(fplog, mkhash, sizeof(mkhash));
+		// 	eprintf("\n");
+		// 	eprintf("SHA256(SK) = ");
+		// 	print_hexstring(stderr, skhash, sizeof(skhash));
+		// 	print_hexstring(fplog, skhash, sizeof(skhash));
+		// 	eprintf("\n");
+		// }
 	}
 
 	if ( msg4 ) {
@@ -834,7 +991,9 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	}
 
         enclave_ra_close(eid, &sgxrv, ra_ctx);
-   
+
+	eprintf("Goodbye!\n");
+
 	return 0;
 }
 
@@ -846,7 +1005,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
  * WARNING!
  *
  * DO NOT USE THIS SUBROUTINE AS A TEMPLATE FOR IMPLEMENTING REMOTE
- * ATTESTATION. do_quote() short-circuits the RA process in order 
+ * ATTESTATION. do_quote() short-circuits the RA process in order
  * to generate an enclave quote directly!
  *
  * The high-level functions provided for remote attestation take
@@ -857,7 +1016,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
  *   sgx_ra_proc_msg2
  *
  * End developers should not normally be calling these functions
- * directly when doing remote attestation: 
+ * directly when doing remote attestation:
  *
  *    sgx_get_ps_sec_prop()
  *    sgx_get_quote()
@@ -973,7 +1132,7 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 	status= sgx_get_quote(&report, linkable, &config->spid,
 		(OPT_ISSET(flags, OPT_NONCE)) ? &config->nonce : NULL,
 		NULL, 0,
-		(OPT_ISSET(flags, OPT_NONCE)) ? &qe_report : NULL, 
+		(OPT_ISSET(flags, OPT_NONCE)) ? &qe_report : NULL,
 		quote, sz);
 	if ( status != SGX_SUCCESS ) {
 		fprintf(stderr, "sgx_get_quote: %08x\n", status);
@@ -1027,7 +1186,7 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 	}
 
 	if (OPT_ISSET(flags, OPT_PSE)) {
-		printf(",\n\"pseManifest\":\"%s\"", b64manifest);	
+		printf(",\n\"pseManifest\":\"%s\"", b64manifest);
 	}
 	printf("\n}\n");
 
@@ -1053,7 +1212,7 @@ sgx_status_t sgx_create_enclave_search (const char *filename, const int edebug,
 
 	/* Is filename an absolute path? */
 
-	if ( filename[0] == '/' ) 
+	if ( filename[0] == '/' )
 		return sgx_create_enclave(filename, edebug, token, updated, eid, attr);
 
 	/* Is the enclave in the current working directory? */
@@ -1065,7 +1224,7 @@ sgx_status_t sgx_create_enclave_search (const char *filename, const int edebug,
 
 	if ( file_in_searchpath(filename, getenv("LD_LIBRARY_PATH"), epath, PATH_MAX) )
 		return sgx_create_enclave(epath, edebug, token, updated, eid, attr);
-		
+
 	/* Search the paths in DT_RUNPATH */
 
 	if ( file_in_searchpath(filename, getenv("DT_RUNPATH"), epath, PATH_MAX) )
@@ -1087,7 +1246,7 @@ sgx_status_t sgx_create_enclave_search (const char *filename, const int edebug,
 	return sgx_create_enclave(filename, edebug, token, updated, eid, attr);
 }
 
-int file_in_searchpath (const char *file, const char *search, char *fullpath, 
+int file_in_searchpath (const char *file, const char *search, char *fullpath,
 	size_t len)
 {
 	char *p, *str;
@@ -1131,7 +1290,7 @@ int file_in_searchpath (const char *file, const char *search, char *fullpath,
 #endif
 
 
-void usage () 
+void usage ()
 {
 	fprintf(stderr, "usage: client [ options ] [ host[:port] ]\n\n");
 	fprintf(stderr, "Required:\n");
@@ -1160,4 +1319,3 @@ void usage ()
 	fprintf(stderr, "\nOne of --spid OR --spid-file is required for generating a quote or doing\nremote attestation.\n");
 	exit(1);
 }
-

@@ -48,6 +48,27 @@ enclave {
 			[out] sgx_status_t *get_keys_status, sgx_ra_context_t ctx,
 			sgx_ra_key_type_t type, [out] sgx_sha256_hash_t *hash);
 
+		public sgx_status_t enclave_ra_encryptWithAES(
+			[out] sgx_status_t *aes_128_dec_status,
+			[out] sgx_status_t *aes_128_enc_status,
+			[out] sgx_status_t *get_keys_status,
+			[out] unsigned char ciphertext[128],
+			[out] sgx_aes_gcm_128bit_tag_t *p_mac,
+			[in, string] unsigned char* plaintext,
+			uint32_t plaintext_length,
+			sgx_ra_context_t ctx
+		);
+
+		public sgx_status_t enclave_ra_decryptWithAES(
+			[out] sgx_status_t *aes_128_dec_status,
+			[out] sgx_status_t *get_keys_status,
+			[out] unsigned char decipheredtext[128],
+			[in] unsigned char ciphertext[128],
+			uint32_t ciphertext_len,
+			[in] sgx_aes_gcm_128bit_tag_t *p_mac,
+			sgx_ra_context_t ctx
+		);
+
 		public sgx_status_t enclave_ra_close(sgx_ra_context_t ctx);
 
 	};
@@ -58,5 +79,3 @@ enclave {
 #endif
 	};
 };
-
-

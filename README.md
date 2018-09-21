@@ -12,6 +12,49 @@
 * [Running (Advanced)](#running-adv)
 * [Sample Output](#output)
 
+## Ankr Intel SGX RA example extension
+
+This is a private fork of the Intel SGX RA example at https://github.com/intel/sgx-ra-sample/:
+```
+$ git remote -v
+intel	https://github.com/intel/sgx-ra-sample.git (fetch)
+intel	DISABLE (push)
+origin	https://github.com/Ankr-network/intel--sgx-ra-sample (fetch)
+origin	https://github.com/Ankr-network/intel--sgx-ra-sample (push)
+```
+
+The application in this private fork uses the shared secret derived during the RA process (and thus known only to the ISV server and the remote SGX enclave, but not the rest of the untrusted remote application) to encrypt (and decrypt) data using the AES 128 bit GCM protocol on both the ISV and SGX sides.
+
+Follow all the instructions in the next sections of the Intel SGX RA example to set up and build it.
+
+Please note that on Ubuntu Linux systems during the installation of the OpenSSL library, you need to run this command:
+```
+$ ./config --prefix=/opt/openssl/1.1.0i --openssldir=/opt/openssl/1.1.0i
+```
+instead of this command listed below in the Intel-provided documentation:
+```
+$ ./Configure --prefix=/opt/openssl/1.1.0i --openssldir=/opt/openssl/1.1.0i
+```
+
+Then follow these additional instructions to run this version of the example after you've registered w/ Intel:
+* Paste the self-signed certificate (`domain.crt`) and private key (`domain.key`) that you registered w/ Intel into the `certs` directory in this repo
+* Paste the Intel signing CA cert that you received from Intel upon registration into the `certs` directory in this repo
+* Make a copy of `settings` called `settings.local` and find and set the following parameters:
+  * `SPID=<SPID provided by Intel upon registration>`
+  * `IAS_CLIENT_CERT_FILE=certs/domain.crt`
+  * `IAS_CLIENT_KEY_FILE=certs/domain.key`
+  * `IAS_REPORT_SIGNING_CA_FILE=certs/AttestationReportSigningCACert.pem`
+* After building the application, change the `run-server` script to load the settings from `settings.local` instead of `settings`
+  * `source settings.local`
+* In one terminal, start the ISV/SP/server w/:
+  ```
+  $ run-server -v -d
+  ```
+* In another terminal, start the client w/:
+  ```
+  $ run-client -v -d
+  ```
+
 ## <a name="intro"></a>Introduction
 
 This code sample demonstrates the procedures that must be followed when performing Remote Attestation for an Intel SGX enclave. The code sample includes both a sample ISV (independent software vendor) client (and its enclave) and ISV remote attestation server. This code sample has been tested on the following platforms:
@@ -317,8 +360,8 @@ Optional:
                              client must be given the corresponding public
                              key. Can't combine with --key.
   -P, --production         Query the production IAS server instead of dev.
-  -X, --strict-trust-mode  Don't trust enclaves that receive a 
-                             CONFIGURATION_NEEDED response from IAS 
+  -X, --strict-trust-mode  Don't trust enclaves that receive a
+                             CONFIGURATION_NEEDED response from IAS
                              (default: trust)
   -Y, --ias-cert-key=FILE  The private key file for the IAS client certificate.
   -d, --debug              Print debug information to stderr.
