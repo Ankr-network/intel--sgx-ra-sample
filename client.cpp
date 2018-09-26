@@ -1104,6 +1104,16 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 	if ( status != SGX_SUCCESS ) {
 		fprintf(stderr, "get_report: %08x\n", status);
 		return 1;
+	} else {
+		puts("========================");
+		puts("Prepared report details:");
+		eprintf("report.body   = %s\n",
+			hexstring(&report.body, sizeof(sgx_report_body_t)));
+		eprintf("report.key_id   = %s\n",
+			hexstring(&report.key_id, sizeof(sgx_key_id_t)));
+		eprintf("report.mac   = %s\n",
+			hexstring(&report.mac, sizeof(sgx_mac_t)));
+		puts("========================");
 	}
 	if ( sgxrv != SGX_SUCCESS ) {
 		fprintf(stderr, "sgx_create_report: %08x\n", sgxrv);
@@ -1138,6 +1148,11 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 		fprintf(stderr, "sgx_get_quote: %08x\n", status);
 		return 1;
 	}
+
+	// Investigate quote
+	puts("=================\n");
+	puts("Investigate quote\n");
+	puts("=================\n");
 
 	/* Print our quote */
 
