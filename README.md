@@ -55,6 +55,16 @@ Then follow these additional instructions to run this version of the example aft
   $ run-client -v -d
   ```
 
+## Quote generation
+
+SGX supports quote generation not just within the remote attestation process, but also as an independent procedure.
+
+The quote generation process works as follows:
+1. The untrusted application calls `sgx_init_quote` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-init-quote) to retrieve info from the enclave for which we're searching a quote
+2. The untrusted application calls an enclave function that generates a report for the enclave using `sgx_create_report` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-create-report).
+The output report of type `sgx_report_t` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-t) features not only the report body `sgx_report_body_t` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-body-t), but also a MAC for authentication as well as the ID of the key used to authenticate the report body.
+3. Finally, the untrusted application calls `sgx_get_quote` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-get-quote) to obtain a quote given the report and other input parameters
+
 ## <a name="intro"></a>Introduction
 
 This code sample demonstrates the procedures that must be followed when performing Remote Attestation for an Intel SGX enclave. The code sample includes both a sample ISV (independent software vendor) client (and its enclave) and ISV remote attestation server. This code sample has been tested on the following platforms:
