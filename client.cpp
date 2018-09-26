@@ -1114,6 +1114,15 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 		eprintf("report.mac   = %s\n",
 			hexstring(&report.mac, sizeof(sgx_mac_t)));
 		puts("========================");
+
+		puts("========================");
+		puts("Prepared report body details:");
+		eprintf("report.body.mr_enclave   = %s\n",
+			hexstring(&report.body.mr_enclave, sizeof(sgx_measurement_t)));
+		puts("Report data (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-data-t)");
+		eprintf("report.body.report_data   = %s\n",
+			hexstring(&report.body.report_data, sizeof(sgx_report_data_t)));
+		puts("========================");
 	}
 	if ( sgxrv != SGX_SUCCESS ) {
 		fprintf(stderr, "sgx_create_report: %08x\n", sgxrv);
