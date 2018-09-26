@@ -1122,6 +1122,8 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 		puts("Report data (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-data-t)");
 		eprintf("report.body.report_data   = %s\n",
 			hexstring(&report.body.report_data, sizeof(sgx_report_data_t)));
+		eprintf("report.body.report_data   = %s\n",
+			&report.body.report_data);
 		puts("========================");
 	}
 	if ( sgxrv != SGX_SUCCESS ) {
