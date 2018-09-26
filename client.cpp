@@ -1104,6 +1104,10 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 	if ( status != SGX_SUCCESS ) {
 		fprintf(stderr, "get_report: %08x\n", status);
 		return 1;
+	}
+	if ( sgxrv != SGX_SUCCESS ) {
+		fprintf(stderr, "sgx_create_report: %08x\n", sgxrv);
+		return 1;
 	} else {
 		puts("========================");
 		puts("Prepared report details:");
@@ -1125,10 +1129,6 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 		eprintf("report.body.report_data   = %s\n",
 			&report.body.report_data);
 		puts("========================");
-	}
-	if ( sgxrv != SGX_SUCCESS ) {
-		fprintf(stderr, "sgx_create_report: %08x\n", sgxrv);
-		return 1;
 	}
 
 	// sgx_get_quote_size() has been deprecated, but our PSW may be too old
