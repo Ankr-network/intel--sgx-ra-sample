@@ -65,6 +65,18 @@ The quote generation process works as follows:
 The output report of type `sgx_report_t` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-t) features not only the report body `sgx_report_body_t` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-body-t), but also a MAC for authentication as well as the ID of the key used to authenticate the report body.
 3. Finally, the untrusted application calls `sgx_get_quote` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-get-quote) to obtain a quote given the report and other input parameters
 
+## Intel Attestation Service-verified quote report
+
+The Intel Attestation Service (IAS) offers an API to let ISV/SP verify a quote from a remote enclave.
+
+The HTTP response feature several important headers:
+* the `x-iasreport-signature` header is the signature by the IAS on the quote report
+* the `x-iasreport-signing-certificate` header features two certificates:
+  * the first certificate is 2048 bits and is used to extract the public key used by IAS to sign the quote report and thus generate the signature stored in the header above
+  * the second certificate it the attestation report signing CA certificate provided by Intel uppon registration as an ISV
+
+Supposedly, the ISV SP can then distribute the signed quote report (i.e., the quote report and the signature), and anybody should be able to verify that the report was signed by IAS, and thus can be trusted to carry correct information about/from whatever remote SGX enclave generated the quote.
+
 ## <a name="intro"></a>Introduction
 
 This code sample demonstrates the procedures that must be followed when performing Remote Attestation for an Intel SGX enclave. The code sample includes both a sample ISV (independent software vendor) client (and its enclave) and ISV remote attestation server. This code sample has been tested on the following platforms:
