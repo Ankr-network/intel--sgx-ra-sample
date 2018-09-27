@@ -750,7 +750,7 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 	// * hardcodedBase64QuoteFromEnclave
 	// * hardcodedBase64QuoteFromIsvSp
 	// * b64quote
-	if ( get_attestation_report(ias, config->apiver, hardcodedBase64QuoteFromEnclave,
+	if ( get_attestation_report(ias, config->apiver, b64quote,
 		msg3->ps_sec_prop, msg4, config->strict_trust) ) {
 
 		sgx_report_body_t *r= (sgx_report_body_t *) &q->report_body;
