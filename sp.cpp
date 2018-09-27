@@ -729,8 +729,8 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 
 		puts("\n======================");
 
-		b64quote = hardcodedBase64Quote;
-		
+		// b64quote = hardcodedBase64Quote;
+
 		edividerWithText("Enclave Quote (base64) ==> Send to IAS");
 
 		eputs(b64quote);
