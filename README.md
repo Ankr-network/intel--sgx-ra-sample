@@ -65,6 +65,20 @@ The quote generation process works as follows:
 The output report of type `sgx_report_t` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-t) features not only the report body `sgx_report_body_t` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-body-t), but also a MAC for authentication as well as the ID of the key used to authenticate the report body.
 3. Finally, the untrusted application calls `sgx_get_quote` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-get-quote) to obtain a quote given the report and other input parameters
 
+### SGX enclave-generated report verification
+
+According to the description in https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-create-report:
+
+> Use the function sgx_create_report to create a cryptographic report that describes the contents of the calling enclave. **The report can be used by other enclaves to verify that the enclave is running on the same platform.**
+
+Therefore, these utility functions cannot be employed to verify in an SGX enclave data set into the report by a remote SGX enclave.
+
+The description at https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-create-report also states that:
+
+> Before the source enclave calls sgx_create_report to generate a report, it needs to populate target_info with information about the target enclave that will verify the report. The target enclave may obtain this information calling sgx_create_report with a NULL pointer for target_info and pass it to the source enclave at the beginning of the inter-enclave attestation process.
+
+Therefore, the target enclave MUST actively generate the target info data (inside the enclave), and provide that data to the source enclave for the report.
+
 ## Intel Attestation Service-verified quote report
 
 The Intel Attestation Service (IAS) offers an API to let ISV/SP verify a quote from a remote enclave.
