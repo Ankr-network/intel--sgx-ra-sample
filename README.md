@@ -79,6 +79,21 @@ The description at https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-cr
 
 Therefore, the target enclave MUST actively generate the target info data (inside the enclave), and provide that data to the source enclave for the report.
 
+### SGX enclave cannot set custom data in quote report body during remote attestation
+
+As part of the remote attestation process, the SGX enclave cannot set custom data in the quote report sent to teh ISV SP, because the report data field is used to store the hashes of keys employed in the remote attestation.
+
+According to https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-ra-msg3-t:
+
+> **quote:**
+Quote returned from sgx_get_quote. The first 32-byte report_body.report_data field in Quote is set to SHA256 hash of ga, gb and VK, and the second 32-byte is set to all 0s.
+
+That is, the `sgx_report_data_t report_data` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-data-t) field in the `sgx_report_body_t report_body` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-body-t) field in the `uint8_t quote[]` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-quote-t) included in msg3 (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-ra-msg3-t) from client to ISV SP CANNOT be used to store custom data from the enclave.
+
+It's unclear whether the second 32 bytes must be set to zero, or could be set to other values.
+
+In any case, the high-level function `sgx-ra-proc-msg2` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-ra-proc-msg2) outputs `msg3` fully constructed, and thus it's impractical to store custom data into the quote report during the remote attestation process.
+
 ## Intel Attestation Service-verified quote report
 
 The Intel Attestation Service (IAS) offers an API to let ISV/SP verify a quote from a remote enclave.
