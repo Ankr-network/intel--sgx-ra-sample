@@ -1131,6 +1131,24 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 		puts("========================");
 	}
 
+	puts("==========================\n");
+	puts("Verify report before quote\n");
+	puts("==========================\n");
+
+	sgx_status_t verify_report_status;
+	status = ecall_sgx_verify_report(
+		eid, &verify_report_status, &report);
+	if ( status != SGX_SUCCESS ) {
+		fprintf(stderr, "verify_report_status call failed w/: %08x\n", status);
+		return 1;
+	} else {
+		if (verify_report_status == SGX_SUCCESS) {
+			eprintf("Success: verify_report_status result: %08x\n", verify_report_status);
+		} else {
+			eprintf("Failure: verify_report_status result: %08x\n", verify_report_status);
+		}
+	}
+
 	// sgx_get_quote_size() has been deprecated, but our PSW may be too old
 	// so use a wrapper function.
 
