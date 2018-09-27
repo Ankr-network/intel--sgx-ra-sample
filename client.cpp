@@ -1146,6 +1146,7 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 			eprintf("Success: verify_report_status result: %08x\n", verify_report_status);
 		} else {
 			eprintf("Failure: verify_report_status result: %08x\n", verify_report_status);
+			puts("Error code 3001 is SGX_ERROR_MAC_MISMATCH: Indicates report verification error");
 		}
 	}
 
