@@ -23,5 +23,5 @@ curl \
   -vvv \
   --key ${KEY} --cert ${CERTIFICATE} \
   --data @${ATTESTATION_EVIDENCE} \
-  --header "Content-Type: application-json" \
+  --header "Content-Type: application/json" \
   ${IAS_SERVER}/${REPORT_ENDPOINT}
