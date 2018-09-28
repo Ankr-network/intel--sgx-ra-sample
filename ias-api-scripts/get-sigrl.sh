@@ -6,10 +6,10 @@ echo "Demostrate IAS SigRL API"
 IAS_SERVER="https://test-as.sgx.trustedservices.intel.com:443"
 
 # SPID private key
-KEY="../certs/domain.key"
+KEY="certs/isv.key"
 
 # SPID self-signed certificate registered on IAS
-CERTIFICATE="../certs/domain.crt"
+CERTIFICATE="certs/isv.crt"
 
 # SigRL API endpoint
 SIGRL_ENDPOINT="attestation/sgx/v3/sigrl"
