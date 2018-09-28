@@ -721,10 +721,10 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 	msgio->read((void **)&msg4, &msg4sz);
 
-	edividerWithText("Enclave Trust Status from Service Provider");
+	dividerWithText(fplog, "Enclave Trust Status from Service Provider");
 
         if(msg4 == NULL){
-           eprintf("msg is null \n");
+           dividerWithText(fplog, "msg is null \n");
            return 0;
 
         }

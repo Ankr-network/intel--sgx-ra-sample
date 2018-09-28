@@ -25,7 +25,7 @@ g++  -g  -L/opt/intel/sgxsdk/lib64 -L/opt/openssl/1.1.0i/lib  -o sgx_boinc_clien
 how to run client
 export LD_LIBRARY_PATH=/opt/openssl/1.1.0i/lib
 
-sgx_boinc_client_test  -s 3415A239C3B68EF66EAD98B1A2D01E2A -r   127.0.0.1:7777
+sgx_boinc_client_test  -s 3415A239C3B68EF66EAD98B1A2D01E2A -r   10.0.0.199:7777
 
 
 
@@ -33,7 +33,7 @@ int sgx_boinc_client_init(int argc, char *argv[]);
 
 return 0 if Successfully
 return 1 if failed
-check client.log file for error 
+check client.log file for error
 
 
 
@@ -252,7 +252,7 @@ You can build the client for simulation mode using `--enable-sgx-simulation`. No
 
 #### <a name="build-win-notes"></a>Windows build notes
 
-The Windows sample uses libcurl instead of Windows native APIs for contacting IAS. At this time, the Intel Attestation Service development server (which most ISV's use during their application and service testing phase) is not compatible with WinHTTP/WinInet due to the amount of data sent by IAS during the TLS handshake.
+The Windows sample uses libcurl instead of Windows native APIs for contacting IAS. At this time, the Intel Attestation Service development server (which most ISV's use during their application and service testing phase) is not comp./client1 -s 3415A239C3B68EF66EAD98B1A2D01E2A -r   10.0.0.199:7777atible with WinHTTP/WinInet due to the amount of data sent by IAS during the TLS handshake.
 
 ## <a name="running-quick"></a>Running the Sample (Quick Start Guide)
 
