@@ -15,8 +15,9 @@ CERTIFICATE="certs/isv.crt"
 REPORT_ENDPOINT="/attestation/sgx/v3/report"
 
 # JSON-formatted attestation evidence file
-# ATTESTATION_EVIDENCE="../runtime-certs/ae.json"
-ATTESTATION_EVIDENCE="../runtime-certs/quote-from-isv.json"
+# ATTESTATION_EVIDENCE="quotes/quote-from-enclave.json"
+ATTESTATION_EVIDENCE="quotes/quote-from-isv.json"
+# ATTESTATION_EVIDENCE="quotes/quote-from-enclave-by-hand.json"
 
 cat ${ATTESTATION_EVIDENCE}
 
