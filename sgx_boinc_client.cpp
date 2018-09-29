@@ -64,7 +64,6 @@ using namespace std;
 #include "msgio.h"
 #include "logfile.h"
 #include "quote_size.h"
-#include "sgx_boinc_client.h"
 
 #define MAX_LEN 80
 
@@ -130,7 +129,7 @@ char verbose= 0;
 # define ENCLAVE_NAME "Enclave.signed.so"
 #endif
 
-int sgx_boinc_client_init(int argc, char *argv[])
+int sgx_boinc_client_init (int argc, char *argv[])
 {
 	config_t config;
 	sgx_launch_token_t token= { 0 };
@@ -208,7 +207,7 @@ int sgx_boinc_client_init(int argc, char *argv[])
 			if ( ! from_hexstring_file((unsigned char *) &config.nonce,
 					optarg, 16)) {
 
-				fprintf(fplog, "nonce must be 32-byte hex string\n");
+				fprintf(stderr, "nonce must be 32-byte hex string\n");
 				exit(1);
 			}
 			SET_OPT(config.flags, OPT_NONCE);
@@ -216,13 +215,13 @@ int sgx_boinc_client_init(int argc, char *argv[])
 			break;
 		case 'P':
 			if ( ! key_load_file(&service_public_key, optarg, KEY_PUBLIC) ) {
-				fprintf(fplog, "%s: ", optarg);
+				fprintf(stderr, "%s: ", optarg);
 				crypto_perror("load_key_from_file");
 				exit(1);
 			}
 
 			if ( ! key_to_sgx_ec256(&config.pubkey, service_public_key) ) {
-				fprintf(fplog, "%s: ", optarg);
+				fprintf(stderr, "%s: ", optarg);
 				crypto_perror("key_to_sgx_ec256");
 				exit(1);
 			}
@@ -233,7 +232,7 @@ int sgx_boinc_client_init(int argc, char *argv[])
 			if ( ! from_hexstring_file((unsigned char *) &config.spid,
 					optarg, 16)) {
 
-				fprintf(fplog, "SPID must be 32-byte hex string\n");
+				fprintf(stderr, "SPID must be 32-byte hex string\n");
 				exit(1);
 			}
 			++have_spid;
@@ -253,13 +252,13 @@ int sgx_boinc_client_init(int argc, char *argv[])
 			break;
 		case 'n':
 			if ( strlen(optarg) < 32 ) {
-				fprintf(fplog, "nonce must be 32-byte hex string\n");
+				fprintf(stderr, "nonce must be 32-byte hex string\n");
 				exit(1);
 			}
 			if ( ! from_hexstring((unsigned char *) &config.nonce,
 					(unsigned char *) optarg, 16) ) {
 
-				fprintf(fplog, "nonce must be 32-byte hex string\n");
+				fprintf(stderr, "nonce must be 32-byte hex string\n");
 				exit(1);
 			}
 
@@ -270,7 +269,7 @@ int sgx_boinc_client_init(int argc, char *argv[])
 			if ( ! from_hexstring((unsigned char *) keyin,
 					(unsigned char *) optarg, 64)) {
 
-				fprintf(fplog, "key must be 128-byte hex string\n");
+				fprintf(stderr, "key must be 128-byte hex string\n");
 				exit(1);
 			}
 
@@ -292,7 +291,7 @@ int sgx_boinc_client_init(int argc, char *argv[])
 
 				while ( !ok && retry ) ok= _rdrand64_step(&np[i]);
 				if ( ok == 0 ) {
-					fprintf(fplog, "nonce: RDRAND underflow\n");
+					fprintf(stderr, "nonce: RDRAND underflow\n");
 					exit(1);
 				}
 			}
@@ -300,13 +299,13 @@ int sgx_boinc_client_init(int argc, char *argv[])
 			break;
 		case 's':
 			if ( strlen(optarg) < 32 ) {
-				fprintf(fplog, "SPID must be 32-byte hex string\n");
+				fprintf(stderr, "SPID must be 32-byte hex string\n");
 				exit(1);
 			}
 			if ( ! from_hexstring((unsigned char *) &config.spid,
 					(unsigned char *) optarg, 16) ) {
 
-				fprintf(fplog, "SPID must be 32-byte hex string\n");
+				fprintf(stderr, "SPID must be 32-byte hex string\n");
 				exit(1);
 			}
 			++have_spid;
@@ -355,7 +354,7 @@ int sgx_boinc_client_init(int argc, char *argv[])
 	}
 
 	if ( ! have_spid && ! config.mode == MODE_EPID ) {
-		fprintf(fplog, "SPID required. Use one of --spid or --spid-file \n");
+		fprintf(stderr, "SPID required. Use one of --spid or --spid-file \n");
 		return 1;
 	}
 
@@ -364,20 +363,20 @@ int sgx_boinc_client_init(int argc, char *argv[])
 #ifndef SGX_HW_SIM
 	sgx_support = get_sgx_support();
 	if (sgx_support & SGX_SUPPORT_NO) {
-		fprintf(fplog, "This system does not support Intel SGX.\n");
+		fprintf(stderr, "This system does not support Intel SGX.\n");
 		return 1;
 	} else {
 		if (sgx_support & SGX_SUPPORT_ENABLE_REQUIRED) {
-			fprintf(fplog, "Intel SGX is supported on this system but disabled in the BIOS\n");
+			fprintf(stderr, "Intel SGX is supported on this system but disabled in the BIOS\n");
 			return 1;
 		}
 		else if (sgx_support & SGX_SUPPORT_REBOOT_REQUIRED) {
-			fprintf(fplog, "Intel SGX will be enabled after the next reboot\n");
+			fprintf(stderr, "Intel SGX will be enabled after the next reboot\n");
 			return 1;
 		}
 		else if (!(sgx_support & SGX_SUPPORT_ENABLED)) {
-			fprintf(fplog, "Intel SGX is supported on this sytem but not available for use\n");
-			fprintf(fplog, "The system may lock BIOS support, or the Platform Software is not available\n");
+			fprintf(stderr, "Intel SGX is supported on this sytem but not available for use\n");
+			fprintf(stderr, "The system may lock BIOS support, or the Platform Software is not available\n");
 			return 1;
 		}
 	}
@@ -389,7 +388,7 @@ int sgx_boinc_client_init(int argc, char *argv[])
 	status = sgx_create_enclave(ENCLAVE_NAME, SGX_DEBUG_FLAG,
 		&token, &updated, &eid, 0);
 	if (status != SGX_SUCCESS) {
-		fprintf(fplog, "sgx_create_enclave: %s: %08x\n",
+		fprintf(stderr, "sgx_create_enclave: %s: %08x\n",
 			ENCLAVE_NAME, status);
 		return 1;
 	}
@@ -397,10 +396,10 @@ int sgx_boinc_client_init(int argc, char *argv[])
 	status = sgx_create_enclave_search(ENCLAVE_NAME,
 		SGX_DEBUG_FLAG, &token, &updated, &eid, 0);
 	if ( status != SGX_SUCCESS ) {
-		fprintf(fplog, "sgx_create_enclave: %s: %08x\n",
+		fprintf(stderr, "sgx_create_enclave: %s: %08x\n",
 			ENCLAVE_NAME, status);
 		if ( status == SGX_ERROR_ENCLAVE_FILE_ACCESS )
-			fprintf(fplog, "Did you forget to set LD_LIBRARY_PATH?\n");
+			fprintf(stderr, "Did you forget to set LD_LIBRARY_PATH?\n");
 		return 1;
 	}
 #endif
@@ -414,7 +413,7 @@ int sgx_boinc_client_init(int argc, char *argv[])
 		do_quote(eid, &config);
 		return 0;
 	} else {
-		fprintf(fplog, "Unknown operation mode.\n");
+		fprintf(stderr, "Unknown operation mode.\n");
 		return 1;
 	}
 
@@ -424,7 +423,6 @@ int sgx_boinc_client_init(int argc, char *argv[])
 
 int do_attestation (sgx_enclave_id_t eid, config_t *config)
 {
-        uint32_t work_unit_id = 12399; // for boinc work_unit
 	sgx_status_t status, sgxrv, pse_status;
 	sgx_ra_msg1_t msg1;
 	sgx_ra_msg2_t *msg2 = NULL;
@@ -464,32 +462,32 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	/* Executes an ECALL that runs sgx_ra_init() */
 
 	if ( OPT_ISSET(flags, OPT_PUBKEY) ) {
-		if ( debug ) fprintf(fplog, "+++ using supplied public key\n");
+		if ( debug ) fprintf(stderr, "+++ using supplied public key\n");
 		status= enclave_ra_init(eid, &sgxrv, config->pubkey, b_pse,
 			&ra_ctx, &pse_status);
 	} else {
-		if ( debug ) fprintf(fplog, "+++ using default public key\n");
+		if ( debug ) fprintf(stderr, "+++ using default public key\n");
 		status= enclave_ra_init_def(eid, &sgxrv, b_pse, &ra_ctx,
 			&pse_status);
 	}
 
 	/* Did the ECALL succeed? */
 	if ( status != SGX_SUCCESS ) {
-		fprintf(fplog, "enclave_ra_init: %08x\n", status);
+		fprintf(stderr, "enclave_ra_init: %08x\n", status);
 		return 1;
 	}
 
 	/* If we asked for a PSE session, did that succeed? */
 	if (b_pse) {
 		if ( pse_status != SGX_SUCCESS ) {
-			fprintf(fplog, "pse_session: %08x\n", sgxrv);
+			fprintf(stderr, "pse_session: %08x\n", sgxrv);
 			return 1;
 		}
 	}
 
 	/* Did sgx_ra_init() succeed? */
 	if ( sgxrv != SGX_SUCCESS ) {
-		fprintf(fplog, "sgx_ra_init: %08x\n", sgxrv);
+		fprintf(stderr, "sgx_ra_init: %08x\n", sgxrv);
 		return 1;
 	}
 
@@ -498,21 +496,21 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	status = sgx_get_extended_epid_group_id(&msg0_extended_epid_group_id);
 	if ( status != SGX_SUCCESS ) {
                 enclave_ra_close(eid, &sgxrv, ra_ctx);
-		fprintf(fplog, "sgx_get_extended_epid_group_id: %08x\n", status);
+		fprintf(stderr, "sgx_get_extended_epid_group_id: %08x\n", status);
 		return 1;
 	}
 	if ( verbose ) {
+		dividerWithText(stderr, "Msg0 Details");
 		dividerWithText(fplog, "Msg0 Details");
-		dividerWithText(fplog, "Msg0 Details");
+		fprintf(stderr,   "Extended Epid Group ID: ");
 		fprintf(fplog,   "Extended Epid Group ID: ");
-		fprintf(fplog,   "Extended Epid Group ID: ");
-		print_hexstring(fplog, &msg0_extended_epid_group_id,
+		print_hexstring(stderr, &msg0_extended_epid_group_id,
 			 sizeof(uint32_t));
 		print_hexstring(fplog, &msg0_extended_epid_group_id,
 			 sizeof(uint32_t));
+		fprintf(stderr, "\n");
 		fprintf(fplog, "\n");
-		fprintf(fplog, "\n");
-		divider(fplog);
+		divider(stderr);
 		divider(fplog);
 	}
 
@@ -521,29 +519,29 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	status= sgx_ra_get_msg1(ra_ctx, eid, sgx_ra_get_ga, &msg1);
 	if ( status != SGX_SUCCESS ) {
                 enclave_ra_close(eid, &sgxrv, ra_ctx);
-		fprintf(fplog, "sgx_ra_get_msg1: %08x\n", status);
+		fprintf(stderr, "sgx_ra_get_msg1: %08x\n", status);
 		fprintf(fplog, "sgx_ra_get_msg1: %08x\n", status);
 		return 1;
 	}
 
 	if ( verbose ) {
+		dividerWithText(stderr,"Msg1 Details");
 		dividerWithText(fplog,"Msg1 Details");
-		dividerWithText(fplog,"Msg1 Details");
+		fprintf(stderr,   "msg1.g_a.gx = ");
 		fprintf(fplog,   "msg1.g_a.gx = ");
-		fprintf(fplog,   "msg1.g_a.gx = ");
+		print_hexstring(stderr, msg1.g_a.gx, 32);
 		print_hexstring(fplog, msg1.g_a.gx, 32);
-		print_hexstring(fplog, msg1.g_a.gx, 32);
+		fprintf(stderr, "\nmsg1.g_a.gy = ");
 		fprintf(fplog, "\nmsg1.g_a.gy = ");
-		fprintf(fplog, "\nmsg1.g_a.gy = ");
+		print_hexstring(stderr, msg1.g_a.gy, 32);
 		print_hexstring(fplog, msg1.g_a.gy, 32);
-		print_hexstring(fplog, msg1.g_a.gy, 32);
+		fprintf(stderr, "\nmsg1.gid    = ");
 		fprintf(fplog, "\nmsg1.gid    = ");
-		fprintf(fplog, "\nmsg1.gid    = ");
+		print_hexstring(stderr, msg1.gid, 4);
 		print_hexstring(fplog, msg1.gid, 4);
-		print_hexstring(fplog, msg1.gid, 4);
+		fprintf(stderr, "\n");
 		fprintf(fplog, "\n");
-		fprintf(fplog, "\n");
-		divider(fplog);
+		divider(stderr);
 		divider(fplog);
 	}
 
@@ -565,14 +563,13 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	fsend_msg(fplog, &msg1, sizeof(msg1));
 	divider(fplog);
 
-	dividerWithText(fplog, "Copy/Paste Msg0||Msg1 Below to SP");
+	dividerWithText(stderr, "Copy/Paste Msg0||Msg1 Below to SP");
 	msgio->send_partial(&msg0_extended_epid_group_id,
 		sizeof(msg0_extended_epid_group_id));
-        msgio->send_partial(&work_unit_id, sizeof(work_unit_id));
 	msgio->send(&msg1, sizeof(msg1));
-	divider(fplog);
+	divider(stderr);
 
-	fprintf(fplog, "Waiting for msg2\n");
+	fprintf(stderr, "Waiting for msg2\n");
 
 	/* Read msg2
 	 *
@@ -583,61 +580,61 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 	rv= msgio->read((void **) &msg2, NULL);
 	if ( rv == 0 ) {
                 enclave_ra_close(eid, &sgxrv, ra_ctx);
-		fprintf(fplog, "protocol error reading msg2\n");
+		fprintf(stderr, "protocol error reading msg2\n");
 		exit(1);
 	} else if ( rv == -1 ) {
                 enclave_ra_close(eid, &sgxrv, ra_ctx);
-		fprintf(fplog, "system error occurred while reading msg2\n");
+		fprintf(stderr, "system error occurred while reading msg2\n");
 		exit(1);
 	}
 
 	if ( verbose ) {
-		dividerWithText(fplog, "Msg2 Details");
+		dividerWithText(stderr, "Msg2 Details");
 		dividerWithText(fplog, "Msg2 Details (Received from SP)");
+		fprintf(stderr,   "msg2.g_b.gx      = ");
 		fprintf(fplog,   "msg2.g_b.gx      = ");
-		fprintf(fplog,   "msg2.g_b.gx      = ");
+		print_hexstring(stderr, &msg2->g_b.gx, sizeof(msg2->g_b.gx));
 		print_hexstring(fplog, &msg2->g_b.gx, sizeof(msg2->g_b.gx));
-		print_hexstring(fplog, &msg2->g_b.gx, sizeof(msg2->g_b.gx));
+		fprintf(stderr, "\nmsg2.g_b.gy      = ");
 		fprintf(fplog, "\nmsg2.g_b.gy      = ");
-		fprintf(fplog, "\nmsg2.g_b.gy      = ");
+		print_hexstring(stderr, &msg2->g_b.gy, sizeof(msg2->g_b.gy));
 		print_hexstring(fplog, &msg2->g_b.gy, sizeof(msg2->g_b.gy));
-		print_hexstring(fplog, &msg2->g_b.gy, sizeof(msg2->g_b.gy));
+		fprintf(stderr, "\nmsg2.spid        = ");
 		fprintf(fplog, "\nmsg2.spid        = ");
-		fprintf(fplog, "\nmsg2.spid        = ");
+		print_hexstring(stderr, &msg2->spid, sizeof(msg2->spid));
 		print_hexstring(fplog, &msg2->spid, sizeof(msg2->spid));
-		print_hexstring(fplog, &msg2->spid, sizeof(msg2->spid));
+		fprintf(stderr, "\nmsg2.quote_type  = ");
 		fprintf(fplog, "\nmsg2.quote_type  = ");
-		fprintf(fplog, "\nmsg2.quote_type  = ");
+		print_hexstring(stderr, &msg2->quote_type, sizeof(msg2->quote_type));
 		print_hexstring(fplog, &msg2->quote_type, sizeof(msg2->quote_type));
-		print_hexstring(fplog, &msg2->quote_type, sizeof(msg2->quote_type));
+		fprintf(stderr, "\nmsg2.kdf_id      = ");
 		fprintf(fplog, "\nmsg2.kdf_id      = ");
-		fprintf(fplog, "\nmsg2.kdf_id      = ");
+		print_hexstring(stderr, &msg2->kdf_id, sizeof(msg2->kdf_id));
 		print_hexstring(fplog, &msg2->kdf_id, sizeof(msg2->kdf_id));
-		print_hexstring(fplog, &msg2->kdf_id, sizeof(msg2->kdf_id));
+		fprintf(stderr, "\nmsg2.sign_ga_gb  = ");
 		fprintf(fplog, "\nmsg2.sign_ga_gb  = ");
-		fprintf(fplog, "\nmsg2.sign_ga_gb  = ");
+		print_hexstring(stderr, &msg2->sign_gb_ga, sizeof(msg2->sign_gb_ga));
 		print_hexstring(fplog, &msg2->sign_gb_ga, sizeof(msg2->sign_gb_ga));
-		print_hexstring(fplog, &msg2->sign_gb_ga, sizeof(msg2->sign_gb_ga));
+		fprintf(stderr, "\nmsg2.mac         = ");
 		fprintf(fplog, "\nmsg2.mac         = ");
-		fprintf(fplog, "\nmsg2.mac         = ");
+		print_hexstring(stderr, &msg2->mac, sizeof(msg2->mac));
 		print_hexstring(fplog, &msg2->mac, sizeof(msg2->mac));
-		print_hexstring(fplog, &msg2->mac, sizeof(msg2->mac));
+		fprintf(stderr, "\nmsg2.sig_rl_size = ");
 		fprintf(fplog, "\nmsg2.sig_rl_size = ");
-		fprintf(fplog, "\nmsg2.sig_rl_size = ");
+		print_hexstring(stderr, &msg2->sig_rl_size, sizeof(msg2->sig_rl_size));
 		print_hexstring(fplog, &msg2->sig_rl_size, sizeof(msg2->sig_rl_size));
-		print_hexstring(fplog, &msg2->sig_rl_size, sizeof(msg2->sig_rl_size));
+		fprintf(stderr, "\nmsg2.sig_rl      = ");
 		fprintf(fplog, "\nmsg2.sig_rl      = ");
-		fprintf(fplog, "\nmsg2.sig_rl      = ");
+		print_hexstring(stderr, &msg2->sig_rl, msg2->sig_rl_size);
 		print_hexstring(fplog, &msg2->sig_rl, msg2->sig_rl_size);
-		print_hexstring(fplog, &msg2->sig_rl, msg2->sig_rl_size);
+		fprintf(stderr, "\n");
 		fprintf(fplog, "\n");
-		fprintf(fplog, "\n");
-		divider(fplog);
+		divider(stderr);
 		divider(fplog);
 	}
 
 	if ( debug ) {
-		fprintf(fplog, "+++ msg2_size = %zu\n",
+		fprintf(stderr, "+++ msg2_size = %zu\n",
 			sizeof(sgx_ra_msg2_t)+msg2->sig_rl_size);
 		fprintf(fplog, "+++ msg2_size = %zu\n",
 			sizeof(sgx_ra_msg2_t)+msg2->sig_rl_size);
@@ -660,53 +657,53 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 	if ( status != SGX_SUCCESS ) {
                 enclave_ra_close(eid, &sgxrv, ra_ctx);
-		fprintf(fplog, "sgx_ra_proc_msg2: %08x\n", status);
+		fprintf(stderr, "sgx_ra_proc_msg2: %08x\n", status);
 		fprintf(fplog, "sgx_ra_proc_msg2: %08x\n", status);
 
 		return 1;
 	}
 
 	if ( debug ) {
-		fprintf(fplog, "+++ msg3_size = %u\n", msg3_sz);
+		fprintf(stderr, "+++ msg3_size = %u\n", msg3_sz);
 		fprintf(fplog, "+++ msg3_size = %u\n", msg3_sz);
 	}
 
 	if ( verbose ) {
+		dividerWithText(stderr, "Msg3 Details");
 		dividerWithText(fplog, "Msg3 Details");
-		dividerWithText(fplog, "Msg3 Details");
+		fprintf(stderr,   "msg3.mac         = ");
 		fprintf(fplog,   "msg3.mac         = ");
-		fprintf(fplog,   "msg3.mac         = ");
+		print_hexstring(stderr, msg3->mac, sizeof(msg3->mac));
 		print_hexstring(fplog, msg3->mac, sizeof(msg3->mac));
-		print_hexstring(fplog, msg3->mac, sizeof(msg3->mac));
+		fprintf(stderr, "\nmsg3.g_a.gx      = ");
 		fprintf(fplog, "\nmsg3.g_a.gx      = ");
-		fprintf(fplog, "\nmsg3.g_a.gx      = ");
+		print_hexstring(stderr, msg3->g_a.gx, sizeof(msg3->g_a.gx));
 		print_hexstring(fplog, msg3->g_a.gx, sizeof(msg3->g_a.gx));
-		print_hexstring(fplog, msg3->g_a.gx, sizeof(msg3->g_a.gx));
+		fprintf(stderr, "\nmsg3.g_a.gy      = ");
 		fprintf(fplog, "\nmsg3.g_a.gy      = ");
-		fprintf(fplog, "\nmsg3.g_a.gy      = ");
+		print_hexstring(stderr, msg3->g_a.gy, sizeof(msg3->g_a.gy));
 		print_hexstring(fplog, msg3->g_a.gy, sizeof(msg3->g_a.gy));
-		print_hexstring(fplog, msg3->g_a.gy, sizeof(msg3->g_a.gy));
+		fprintf(stderr, "\nmsg3.ps_sec_prop.sgx_ps_sec_prop_desc = ");
 		fprintf(fplog, "\nmsg3.ps_sec_prop.sgx_ps_sec_prop_desc = ");
-		fprintf(fplog, "\nmsg3.ps_sec_prop.sgx_ps_sec_prop_desc = ");
-		print_hexstring(fplog, msg3->ps_sec_prop.sgx_ps_sec_prop_desc,
+		print_hexstring(stderr, msg3->ps_sec_prop.sgx_ps_sec_prop_desc,
 			sizeof(msg3->ps_sec_prop.sgx_ps_sec_prop_desc));
 		print_hexstring(fplog, msg3->ps_sec_prop.sgx_ps_sec_prop_desc,
 			sizeof(msg3->ps_sec_prop.sgx_ps_sec_prop_desc));
 		fprintf(fplog, "\n");
+		fprintf(stderr, "\nmsg3.quote       = ");
 		fprintf(fplog, "\nmsg3.quote       = ");
-		fprintf(fplog, "\nmsg3.quote       = ");
+		print_hexstring(stderr, msg3->quote, msg3_sz-sizeof(sgx_ra_msg3_t));
 		print_hexstring(fplog, msg3->quote, msg3_sz-sizeof(sgx_ra_msg3_t));
-		print_hexstring(fplog, msg3->quote, msg3_sz-sizeof(sgx_ra_msg3_t));
 		fprintf(fplog, "\n");
+		fprintf(stderr, "\n");
 		fprintf(fplog, "\n");
-		fprintf(fplog, "\n");
-		divider(fplog);
+		divider(stderr);
 		divider(fplog);
 	}
 
-	dividerWithText(fplog, "Copy/Paste Msg3 Below to SP");
+	dividerWithText(stderr, "Copy/Paste Msg3 Below to SP");
 	msgio->send(msg3, msg3_sz);
-	divider(fplog);
+	divider(stderr);
 
 	dividerWithText(fplog, "Msg3 ==> SP");
 	fsend_msg(fplog, msg3, msg3_sz);
@@ -721,13 +718,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 	msgio->read((void **)&msg4, &msg4sz);
 
-	dividerWithText(fplog, "Enclave Trust Status from Service Provider");
-
-        if(msg4 == NULL){
-           dividerWithText(fplog, "msg is null \n");
-           return 0;
-
-        }
+	edividerWithText("Enclave Trust Status from Service Provider");
 
 	enclaveTrusted= msg4->status;
 	if ( enclaveTrusted == Trusted ) {
@@ -761,7 +752,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 		if ( debug )  {
 			eprintf("+++ PIB: " );
-			print_hexstring(fplog, &msg4->platformInfoBlob, sizeof (sgx_platform_info_t));
+			print_hexstring(stderr, &msg4->platformInfoBlob, sizeof (sgx_platform_info_t));
 			print_hexstring(fplog, &msg4->platformInfoBlob, sizeof (sgx_platform_info_t));
 			eprintf("\n");
 		}
@@ -832,11 +823,11 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 		if ( debug ) eprintf("+++ sgx_ra_get_keys (MK) ret= 0x%04x\n", key_status);
 		if ( verbose ) {
 			eprintf("SHA256(MK) = ");
-			print_hexstring(fplog, mkhash, sizeof(mkhash));
+			print_hexstring(stderr, mkhash, sizeof(mkhash));
 			print_hexstring(fplog, mkhash, sizeof(mkhash));
 			eprintf("\n");
 			eprintf("SHA256(SK) = ");
-			print_hexstring(fplog, skhash, sizeof(skhash));
+			print_hexstring(stderr, skhash, sizeof(skhash));
 			print_hexstring(fplog, skhash, sizeof(skhash));
 			eprintf("\n");
 		}
@@ -878,7 +869,7 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 		if (verbose) {
 			eprintf("MAC: ");
-			print_hexstring(fplog, p_mac, sizeof(p_mac));
+			print_hexstring(stderr, p_mac, sizeof(p_mac));
 			eprintf("\n");
 		}
 
@@ -986,11 +977,11 @@ int do_attestation (sgx_enclave_id_t eid, config_t *config)
 
 		// if ( verbose ) {
 		// 	eprintf("SHA256(MK) = ");
-		// 	print_hexstring(fplog, mkhash, sizeof(mkhash));
+		// 	print_hexstring(stderr, mkhash, sizeof(mkhash));
 		// 	print_hexstring(fplog, mkhash, sizeof(mkhash));
 		// 	eprintf("\n");
 		// 	eprintf("SHA256(SK) = ");
-		// 	print_hexstring(fplog, skhash, sizeof(skhash));
+		// 	print_hexstring(stderr, skhash, sizeof(skhash));
 		// 	print_hexstring(fplog, skhash, sizeof(skhash));
 		// 	eprintf("\n");
 		// }
@@ -1069,13 +1060,13 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 	if (OPT_ISSET(flags, OPT_PSE)) {
 		status = sgx_get_ps_cap(&ps_cap);
 		if (status != SGX_SUCCESS) {
-			fprintf(fplog, "sgx_get_ps_cap: %08x\n", status);
+			fprintf(stderr, "sgx_get_ps_cap: %08x\n", status);
 			return 1;
 		}
 
 		status = get_pse_manifest_size(eid, &pse_manifest_sz);
 		if (status != SGX_SUCCESS) {
-			fprintf(fplog, "get_pse_manifest_size: %08x\n",
+			fprintf(stderr, "get_pse_manifest_size: %08x\n",
 				status);
 			return 1;
 		}
@@ -1084,12 +1075,12 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 
 		status = get_pse_manifest(eid, &sgxrv, pse_manifest, pse_manifest_sz);
 		if (status != SGX_SUCCESS) {
-			fprintf(fplog, "get_pse_manifest: %08x\n",
+			fprintf(stderr, "get_pse_manifest: %08x\n",
 				status);
 			return 1;
 		}
 		if (sgxrv != SGX_SUCCESS) {
-			fprintf(fplog, "get_sec_prop_desc_ex: %08x\n",
+			fprintf(stderr, "get_sec_prop_desc_ex: %08x\n",
 				sgxrv);
 			return 1;
 		}
@@ -1101,7 +1092,7 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 
 	status= sgx_init_quote(&target_info, &epid_gid);
 	if ( status != SGX_SUCCESS ) {
-		fprintf(fplog, "sgx_init_quote: %08x\n", status);
+		fprintf(stderr, "sgx_init_quote: %08x\n", status);
 		return 1;
 	}
 
@@ -1113,11 +1104,11 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 
 	status= get_report(eid, &sgxrv, &report, &target_info);
 	if ( status != SGX_SUCCESS ) {
-		fprintf(fplog, "get_report: %08x\n", status);
+		fprintf(stderr, "get_report: %08x\n", status);
 		return 1;
 	}
 	if ( sgxrv != SGX_SUCCESS ) {
-		fprintf(fplog, "sgx_create_report: %08x\n", sgxrv);
+		fprintf(stderr, "sgx_create_report: %08x\n", sgxrv);
 		return 1;
 	}
 
@@ -1125,17 +1116,17 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 	// so use a wrapper function.
 
 	if (! get_quote_size(&status, &sz)) {
-		fprintf(fplog, "PSW missing sgx_get_quote_size() and sgx_calc_quote_size()\n");
+		fprintf(stderr, "PSW missing sgx_get_quote_size() and sgx_calc_quote_size()\n");
 		return 1;
 	}
 	if ( status != SGX_SUCCESS ) {
-		fprintf(fplog, "SGX error while getting quote size: %08x\n", status);
+		fprintf(stderr, "SGX error while getting quote size: %08x\n", status);
 		return 1;
 	}
 
 	quote= (sgx_quote_t *) malloc(sz);
 	if ( quote == NULL ) {
-		fprintf(fplog, "out of memory\n");
+		fprintf(stderr, "out of memory\n");
 		return 1;
 	}
 
@@ -1146,7 +1137,7 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 		(OPT_ISSET(flags, OPT_NONCE)) ? &qe_report : NULL,
 		quote, sz);
 	if ( status != SGX_SUCCESS ) {
-		fprintf(fplog, "sgx_get_quote: %08x\n", status);
+		fprintf(stderr, "sgx_get_quote: %08x\n", status);
 		return 1;
 	}
 
@@ -1157,25 +1148,25 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 	// but it's cleaner to use the API.
 
 	if (CryptBinaryToString((BYTE *) quote, sz, CRYPT_STRING_BASE64|CRYPT_STRING_NOCRLF, NULL, &sz_b64quote) == FALSE) {
-		fprintf(fplog, "CryptBinaryToString: could not get Base64 encoded quote length\n");
+		fprintf(stderr, "CryptBinaryToString: could not get Base64 encoded quote length\n");
 		return 1;
 	}
 
 	b64quote = (LPTSTR)(malloc(sz_b64quote));
 	if (CryptBinaryToString((BYTE *) quote, sz, CRYPT_STRING_BASE64|CRYPT_STRING_NOCRLF, b64quote, &sz_b64quote) == FALSE) {
-		fprintf(fplog, "CryptBinaryToString: could not get Base64 encoded quote length\n");
+		fprintf(stderr, "CryptBinaryToString: could not get Base64 encoded quote length\n");
 		return 1;
 	}
 
 	if (OPT_ISSET(flags, OPT_PSE)) {
 		if (CryptBinaryToString((BYTE *)pse_manifest, (uint32_t)(pse_manifest_sz), CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, NULL, &sz_b64manifest) == FALSE) {
-			fprintf(fplog, "CryptBinaryToString: could not get Base64 encoded manifest length\n");
+			fprintf(stderr, "CryptBinaryToString: could not get Base64 encoded manifest length\n");
 			return 1;
 		}
 
 		b64manifest = (LPTSTR)(malloc(sz_b64manifest));
 		if (CryptBinaryToString((BYTE *)pse_manifest, (uint32_t)(pse_manifest_sz), CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, b64manifest, &sz_b64manifest) == FALSE) {
-			fprintf(fplog, "CryptBinaryToString: could not get Base64 encoded manifest length\n");
+			fprintf(stderr, "CryptBinaryToString: could not get Base64 encoded manifest length\n");
 			return 1;
 		}
 	}
@@ -1202,7 +1193,7 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 	printf("\n}\n");
 
 #ifdef SGX_HW_SIM
-	fprintf(fplog, "WARNING! Built in h/w simulation mode. This quote will not be verifiable.\n");
+	fprintf(stderr, "WARNING! Built in h/w simulation mode. This quote will not be verifiable.\n");
 #endif
 
 	return 0;
@@ -1303,30 +1294,30 @@ int file_in_searchpath (const char *file, const char *search, char *fullpath,
 
 void usage ()
 {
-	fprintf(fplog, "usage: client [ options ] [ host[:port] ]\n\n");
-	fprintf(fplog, "Required:\n");
-	fprintf(fplog, "  -N, --nonce-file=FILE    Set a nonce from a file containing a 32-byte\n");
-	fprintf(fplog, "                             ASCII hex string\n");
-	fprintf(fplog, "  -P, --pubkey-file=FILE   File containing the public key of the service\n");
-	fprintf(fplog, "                             provider.\n");
-	fprintf(fplog, "  -S, --spid-file=FILE     Set the SPID from a file containing a 32-byte\n");
-	fprintf(fplog, "                             ASCII hex string\n");
-	fprintf(fplog, "  -d, --debug              Show debugging information\n");
-	fprintf(fplog, "  -e, --epid-gid           Get the EPID Group ID instead of performing\n");
-	fprintf(fplog, "                             an attestation.\n");
-	fprintf(fplog, "  -l, --linkable           Specify a linkable quote (default: unlinkable)\n");
-	fprintf(fplog, "  -m, --pse-manifest       Include the PSE manifest in the quote\n");
-	fprintf(fplog, "  -n, --nonce=HEXSTRING    Set a nonce from a 32-byte ASCII hex string\n");
-	fprintf(fplog, "  -p, --pubkey=HEXSTRING   Specify the public key of the service provider\n");
-	fprintf(fplog, "                             as an ASCII hex string instead of using the\n");
-	fprintf(fplog, "                             default.\n");
-	fprintf(fplog, "  -q                       Generate a quote instead of performing an\n");
-	fprintf(fplog, "                             attestation.\n");
-	fprintf(fplog, "  -r                       Generate a nonce using RDRAND\n");
-	fprintf(fplog, "  -s, --spid=HEXSTRING     Set the SPID from a 32-byte ASCII hex string\n");
-	fprintf(fplog, "  -v, --verbose            Print decoded RA messages to fplog\n");
-	fprintf(fplog, "  -z                       Read from stdin and write to stdout instead\n");
-	fprintf(fplog, "                             connecting to a server.\n");
-	fprintf(fplog, "\nOne of --spid OR --spid-file is required for generating a quote or doing\nremote attestation.\n");
+	fprintf(stderr, "usage: client [ options ] [ host[:port] ]\n\n");
+	fprintf(stderr, "Required:\n");
+	fprintf(stderr, "  -N, --nonce-file=FILE    Set a nonce from a file containing a 32-byte\n");
+	fprintf(stderr, "                             ASCII hex string\n");
+	fprintf(stderr, "  -P, --pubkey-file=FILE   File containing the public key of the service\n");
+	fprintf(stderr, "                             provider.\n");
+	fprintf(stderr, "  -S, --spid-file=FILE     Set the SPID from a file containing a 32-byte\n");
+	fprintf(stderr, "                             ASCII hex string\n");
+	fprintf(stderr, "  -d, --debug              Show debugging information\n");
+	fprintf(stderr, "  -e, --epid-gid           Get the EPID Group ID instead of performing\n");
+	fprintf(stderr, "                             an attestation.\n");
+	fprintf(stderr, "  -l, --linkable           Specify a linkable quote (default: unlinkable)\n");
+	fprintf(stderr, "  -m, --pse-manifest       Include the PSE manifest in the quote\n");
+	fprintf(stderr, "  -n, --nonce=HEXSTRING    Set a nonce from a 32-byte ASCII hex string\n");
+	fprintf(stderr, "  -p, --pubkey=HEXSTRING   Specify the public key of the service provider\n");
+	fprintf(stderr, "                             as an ASCII hex string instead of using the\n");
+	fprintf(stderr, "                             default.\n");
+	fprintf(stderr, "  -q                       Generate a quote instead of performing an\n");
+	fprintf(stderr, "                             attestation.\n");
+	fprintf(stderr, "  -r                       Generate a nonce using RDRAND\n");
+	fprintf(stderr, "  -s, --spid=HEXSTRING     Set the SPID from a 32-byte ASCII hex string\n");
+	fprintf(stderr, "  -v, --verbose            Print decoded RA messages to stderr\n");
+	fprintf(stderr, "  -z                       Read from stdin and write to stdout instead\n");
+	fprintf(stderr, "                             connecting to a server.\n");
+	fprintf(stderr, "\nOne of --spid OR --spid-file is required for generating a quote or doing\nremote attestation.\n");
 	exit(1);
 }
