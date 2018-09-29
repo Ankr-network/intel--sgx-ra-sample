@@ -689,6 +689,56 @@ int process_msg3 (MsgIO *msgio, IAS_Connection *ias, sgx_ra_msg1_t *msg1,
 	b64quote= base64_encode((char *) &msg3->quote, quote_sz);
 	q= (sgx_quote_t *) msg3->quote;
 
+	puts("=================\n");
+	puts("Generated quote details:\n");
+	puts("=================\n");
+
+	sgx_quote_t *quote= (sgx_quote_t *) msg3->quote;
+	eprintf("quote.version   = %s\n",
+		hexstring(&quote->version, sizeof(uint16_t)));
+	eprintf("quote.sign_type   = %s\n",
+		hexstring(&quote->sign_type, sizeof(uint16_t)));
+	eprintf("quote.epid_group_id   = %s\n",
+		hexstring(&quote->epid_group_id, sizeof(sgx_epid_group_id_t)));
+	eprintf("quote.qe_svn   = %s\n",
+		hexstring(&quote->qe_svn, sizeof(sgx_isv_svn_t)));
+	eprintf("quote.pce_svn   = %s\n",
+		hexstring(&quote->pce_svn, sizeof(sgx_isv_svn_t)));
+	eprintf("quote.xeid   = %s\n",
+		hexstring(&quote->xeid, sizeof(uint32_t)));
+	eprintf("quote.basename   = %s\n",
+		hexstring(&quote->basename, sizeof(sgx_basename_t)));
+	eprintf("quote.report_body.cpu_svn   = %s\n",
+		hexstring(&quote->report_body.cpu_svn, sizeof(sgx_cpu_svn_t)));
+	eprintf("quote.report_body.misc_select   = %s\n",
+		hexstring(&quote->report_body.misc_select, sizeof(sgx_misc_select_t)));
+	eprintf("quote.report_body.reserved1   = %s\n",
+		hexstring(&quote->report_body.reserved1, sizeof(uint8_t[28])));
+	eprintf("quote.report_body.attributes   = %s\n",
+		hexstring(&quote->report_body.attributes, sizeof(sgx_attributes_t)));
+	eprintf("quote.report_body.mr_enclave   = %s\n",
+		hexstring(&quote->report_body.mr_enclave, sizeof(sgx_measurement_t)));
+	eprintf("quote.report_body.reserved2   = %s\n",
+		hexstring(&quote->report_body.reserved2, sizeof(uint8_t[32])));
+	eprintf("quote.report_body.mr_signer   = %s\n",
+		hexstring(&quote->report_body.mr_signer, sizeof(sgx_measurement_t)));
+	eprintf("quote.report_body.reserved3   = %s\n",
+		hexstring(&quote->report_body.reserved3, sizeof(uint8_t[96])));
+	eprintf("quote.report_body.isv_prod_id   = %s\n",
+		hexstring(&quote->report_body.isv_prod_id, sizeof(sgx_prod_id_t)));
+	eprintf("quote.report_body.isv_svn   = %s\n",
+		hexstring(&quote->report_body.isv_svn, sizeof(sgx_isv_svn_t)));
+	eprintf("quote.report_body.reserved4   = %s\n",
+		hexstring(&quote->report_body.reserved4, sizeof(uint8_t[60])));
+	eprintf("quote.report_body.report_data   = %s\n",
+		hexstring(&quote->report_body.report_data, sizeof(sgx_report_data_t)));
+	eprintf("quote.report_body.signature_len   = %s, or %d\n",
+		hexstring(&quote->signature_len, sizeof(uint32_t)), quote->signature_len);
+	eprintf("quote.report_body.signature   = %s\n",
+		hexstring(&quote->signature, quote->signature_len));
+
+	puts("\n\n");
+
 	char *hardcodedBase64QuoteFromIsvSp = (char*) "AgAAAPsKAAAHAAYAAAAAAEosBwRs9a4k3xCKuz410z/vMhHR2z4Iz7AWKmCwkICKCAj///8CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHAAAAAAAAAGBpB0yBe7aq+Pj7PmD6JXwpDaYiTp0ICVYllPvRbqyPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC9ccY4Dvd8VBfostHOLUtlBLn0GOUEk0JEDP/yRD2VvQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAClZ3hC1LhH+L0dPbFksoZ4hXUXusnHsdb7510oY7bTVgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqAIAAAp46MSVCSErmdnPKGvWDxcksbpQIcBHRA6Di5l5QhPAXoen4A+Jy74KUitv1UR5YE9CH4pInPlcBn5JxOJihTdcJdQigv9a0KngV0XZCRVChOMgRU3GsifW/nB9OKoAfBr8qOmhcTjz4SkON/2wzq8fiyaIK5YwtudTMzIez1x91B/owgvQ9neIdz+dVlUFFbuBMoETKRyWpmbx/YbRb49DsWalYlXMZDndT0PvQOxjcSfMyFDV3WTT7wHMhXkImfW0E2DXW2NRF25UJW0P7vGDerx5WJx8oVxEobT/sgbaWNVR/cly98HaszMJ0RbhfNT0akY5ViXeV8KcU3CAnKQP+O1sEoD4gkzcxplf+Hp6UHvqtdNKX6w8XQ13+Ax9pRUrJd12Ynsvc5FQaGgBAAC1fqRuzPMmR0jkAHB21dMGuUWYlXL2LLZQhtEi501/A3gaoBBtYHWs5sjsl/+JBb65muje7leIAdSmg1BaEpUX+L0jxYZMoE4YeZV3RvRbCQnr15odKi3Q5yltvy6pX33VtiG7+7OX4eBmy+79e3rE5g/gPbKS1isfhW+GX0wEEHE6O0z15Hrs/ZWL/i7scgfsoWTp4xPAKBI3sXPtmdgDuo+WQ6C06v1CNQuqesIN3AwaULPyx6iOJkr7AnXnj6ZNA/U+sr9dkc/vguv9+gicBL8zSQiiyRGwiQrimFt48fJEufL3AePcOwA2X14sW/txe1Fp+Vco0ffjB9xi2ToiXETjmzAYBZXl31BrZkJETOSrj9+uVj0ke3h4kbG0goGPd5f2VnRm7PRSgswL93d08/i170Hb3NOKhhgwgdvNYTWd09ihm1V+lZnYJdYLDtlcP2Y3XMRL5ZshBCW/xxT0dT2dxSqqaZkAzNbS1cl5AmahXj7YQLTS";
 
 	char *hardcodedBase64QuoteFromEnclave = (char*) "AgAAAPsKAAAHAAYAAAAAAAEjRWeJq83vASNFZ4mrze8yILV7BPLVeSYU6DjTPRXfCAj///8CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHAAAAAAAAAGBpB0yBe7aq+Pj7PmD6JXwpDaYiTp0ICVYllPvRbqyPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC9ccY4Dvd8VBfostHOLUtlBLn0GOUEk0JEDP/yRD2VvQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABRdW90ZWQgbWVzc2FnZSBmcm9tIGluc2lkZSBBbmtyIFNHWCBlbmNsYXZlLgAAAAAAAAAAAAAAAAAAAAAAAAAAqAIAAEbdOtlSDmtK4LhcCtLbcKHMAOQpU0arINEpDERb9aYdHiAKtWqaGrtA048KPOKsR+JgAft6X7UfiOLLTx5VfLyZNNlLxA2tHWsYA2noEsE2jkGCORKBiEvuGGIFVCz1IYhgFszhbw8jcnKYPzGzzXInnN9rv2e5sMBq1Jg16YjIPWKIFkY8SZr9XsvT73VKkRmuGY1eDn7cyl/r6XgKnr7yC9Y3nmvTP+/cHyRw94Yb5g3m4WWyRyLwi1zlN7h6lWez0M6N8spXcUORzotRIPeTEPpNsukVk+ziB96t+3Mzg6h8v9I+Ar7/hiLB4w+GJK8/erPXPtDS2mt7UvcutlHpejmDz8zIjpcc5qHj5NyMk5sDEXB5vfe3KAWjQy5zhaNmrp5EhfXuHJ5zK2gBAABjPIjJI9MoGV8f8GWlPGkkCLsrOmaTBn0jbHnznm9hznLeE525g7EMbcOwTln0/K1hdnF/+IkFI6rRS/c4TTKD3YOGPHrCGvOmc7PbPbhvkm2IzcUkANyAlrJdX6PNEp1cKYdUZwwSxRufB1RA7BG2Bk0NOs+JVKRpH+erVHNebXrz2eV8mp76p4Q85DhC9pgy/vioENZ8t7wwDSVjv56uHjVxRub/QJB17JzFLI70sYgx10VPAuQwrJ6gt/1L9DrNpQdB9Sl9A/OkBZu1lhgpu92q+nkqM2x92xVvpSqW4kFwQyc+ZpoawXJ1RHFDi7xgMCPvVk6fp/96epwgM/4ReQKe5z4B9VIJnPw+Dgcn8W/mzLtVLAzBuPN/iRwfuvX4/bapScm+ziNa+DnHMw1X3h+dvqJiohTRc5x97Lbs69INUREO1RXNBvUFh19oDHQhC8VFDULNfl698Kx2QCEqPNtxL8bEShbynVqAYDWaM29kTzydi/3o";
