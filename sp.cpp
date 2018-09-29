@@ -112,6 +112,9 @@ int get_attestation_report(IAS_Connection *ias, int version,
 	const char *b64quote, sgx_ps_sec_prop_desc_t sec_prop, ra_msg4_t *msg4,
 	int strict_trust);
 
+int get_attestation_report_easy(IAS_Connection *ias, int version,
+		const char *b64quote);
+
 int get_proxy(char **server, unsigned int *port, const char *url);
 
 int encryptWithAES(unsigned char *plaintext, int plaintext_len, unsigned char *key,
@@ -139,12 +142,14 @@ int main(int argc, char *argv[])
 	char flag_noproxy= 0;
 	char flag_prod= 0;
 	char flag_stdio= 0;
+	char flag_try= 0;
 	char *sigrl = NULL;
 	config_t config;
 	int oops;
 	IAS_Connection *ias= NULL;
 	MsgIO *msgio;
 	char *port= NULL;
+	bool keepLoop = true;
 
 	/* Command line options */
 
@@ -176,6 +181,7 @@ int main(int argc, char *argv[])
 		{"ias-cert-type",	required_argument,	0, 't'},
 		{"verbose",			no_argument,		0, 'v'},
 		{"no-proxy",		no_argument,		0, 'x'},
+		{"trying",		no_argument,		0, 'y'},
 		{"stdio",			no_argument,		0, 'z'},
 		{ 0, 0, 0, 0 }
 	};
@@ -201,7 +207,7 @@ int main(int argc, char *argv[])
 		int c;
 		int opt_index = 0;
 
-		c = getopt_long(argc, argv, "A:B:C:E:GK:PS:XY:dg:hk:lp:r:s:t:vxz", long_opt, &opt_index);
+		c = getopt_long(argc, argv, "A:B:C:E:GK:PS:XY:dg:hk:lp:r:s:t:vxyz", long_opt, &opt_index);
 		if (c == -1) break;
 
 		switch (c) {
@@ -340,6 +346,10 @@ int main(int argc, char *argv[])
 			if ( config.proxy_server != NULL ) usage();
 			flag_noproxy=1;
 			break;
+		case 'y':
+				flag_try= 1;
+				keepLoop= false;
+				break;
 		case 'z':
 			flag_stdio= 1;
 			break;
@@ -545,7 +555,7 @@ int main(int argc, char *argv[])
 
  	/* If we're running in server mode, we'll block here.  */
 
-	while ( msgio->server_loop() ) {
+	while ( keepLoop && msgio->server_loop() ) {
 		sgx_ra_msg1_t msg1;
 		sgx_ra_msg2_t msg2;
 		ra_msg4_t msg4;
@@ -589,6 +599,11 @@ int main(int argc, char *argv[])
 
 disconnect:
 		msgio->disconnect();
+	}
+
+	if (flag_try) {
+		eprintf("we are in try block\n");
+		get_attestation_report_easy(ias, config.apiver, "AgAAAPUKAAAHAAYAAAAAAI9rny7ARRKtDwxp0sY0cHUgZ7oj1xY6DVCEpfJpQzwGCAgCBP8CAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHAAAAAAAAAPf2R8fkUIo8k+iTBl/wn4BVfWPIR59pF7sJIM0TsFREAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC9ccY4Dvd8VBfostHOLUtlBLn0GOUEk0JEDP/yRD2VvQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqAIAAIXJxzsdQuCQXgXojPnMi1qY9GfqKQAjAta6RbusKihJVjAkYbsziv0UDgVX1veLc7Q1+HuUkC9gFiPuYTF+CQAnM+d/l6H3DQlH3RI2TzXfFvd2/eaVgXiVZc7II20PnXrao6nQs2mLQU6ZsLUZFkRtrhxB7AkbM6QUPjARmF8hIz39QOpanRhBfvCEQE8LVP4cVwonmUV28x+InswX7NLtbI1RoEpbAZWqpkR5SGwto9BKk1vOyCMDf0Jo83t1p6RC8kSaeRhXKfpeg6CiqXBTvbyTR8asd4Ea2KaEpPVQB8HcgE/6t5CbqwIcv/LbkRIWAB5EDNGUW/sdNA6AtVx8Yy6Uf5o/X7LQF4GzQUfMHva7ApuH5+AOB4MGU6MyDv/EcFXA16YjwCejr2gBAACXRcCF+s8AS5o+iULyJggeDLr9RbEWypawMSkIY+ihcct2bYv7TzKd0IHznHEF6+zlDRIATewXW7Os3y7qlq09zW4zwGqP+Z7Nlsa+KKpPanzgfwVQtrGEtD4I9h+p1Y1ObuFO3nnVln+8ki7fUR9Z99PrJNrNiC5lkwzDeiCcIKnLHlmC1PySl9Jqgx3zGKT5fW7HJhRnao3XI3ZJ+SkyToc9lMW5Y7h0MYSPm6ZnJRXUoFJf8b0qtWgY6Enm42cbzZUO8iyxdb/xib3lf13QFZdH885FSgt4PhCPwul22OncIkwSsDjf2jKJRHnE6YScZZwzSpRVMEbeSUcPzKaK+ojXHi1I4F03/TVYwhZ0Eku25XlLncRk/NfX/zZZjrmxxYqEQa1kzlWLOEVlC+IlgzBOa5SymoxCeJok8p9t8N5d2AZHCFVqZ7agIIB6FmMVarR1UgrxpFUWUlh1KsOO+IMwme1wGlrln399EdbLN9Pqo57jxtmj");
 	}
 
 	crypto_destroy();
@@ -1382,6 +1397,72 @@ int get_sigrl (IAS_Connection *ias, int version, sgx_epid_group_id_t gid,
 	*sig_rl_size= (uint32_t ) sigrlstr.length();
 
 	return 1;
+}
+
+int get_attestation_report_easy(IAS_Connection *ias, int version,
+	const char *b64quote)
+{
+	IAS_Request *req = NULL;
+	map<string,string> payload;
+	vector<string> messages;
+	ias_error_t status;
+	string content;
+
+	try {
+		req= new IAS_Request(ias, (uint16_t) version);
+	}
+	catch (...) {
+		eprintf("Exception while creating IAS request object\n");
+		return 0;
+	}
+
+	payload.insert(make_pair("isvEnclaveQuote", b64quote));
+
+	status= req->report(payload, content, messages);
+	if ( status == IAS_OK ) {
+		JSON reportObj = JSON::Load(content);
+
+		if ( verbose ) {
+			edividerWithText("Report Body");
+			eprintf("%s\n", content.c_str());
+			edivider();
+			if ( messages.size() ) {
+				edividerWithText("IAS Advisories");
+				for (vector<string>::const_iterator i = messages.begin();
+					i != messages.end(); ++i ) {
+
+					eprintf("%s\n", i->c_str());
+				}
+				edivider();
+			}
+		}
+
+		if ( verbose ) {
+			edividerWithText("IAS Report - JSON - Required Fields");
+			eprintf("id:\t\t\t%s\n", reportObj["id"].ToString().c_str());
+			eprintf("timestamp:\t\t%s\n",
+				reportObj["timestamp"].ToString().c_str());
+			eprintf("isvEnclaveQuoteStatus:\t%s\n",
+				reportObj["isvEnclaveQuoteStatus"].ToString().c_str());
+			eprintf("isvEnclaveQuoteBody:\t%s\n",
+				reportObj["isvEnclaveQuoteBody"].ToString().c_str());
+
+			edividerWithText("IAS Report - JSON - Optional Fields");
+
+			eprintf("platformInfoBlob:\t%s\n",
+				reportObj["platformInfoBlob"].ToString().c_str());
+			eprintf("revocationReason:\t%s\n",
+				reportObj["revocationReason"].ToString().c_str());
+			eprintf("pseManifestStatus:\t%s\n",
+				reportObj["pseManifestStatus"].ToString().c_str());
+			eprintf("pseManifestHash:\t%s\n",
+				reportObj["pseManifestHash"].ToString().c_str());
+			eprintf("nonce:\t%s\n", reportObj["nonce"].ToString().c_str());
+			eprintf("epidPseudonym:\t%s\n",
+				reportObj["epidPseudonym"].ToString().c_str());
+			edivider();
+		}
+	}
 }
 
 int get_attestation_report(IAS_Connection *ias, int version,

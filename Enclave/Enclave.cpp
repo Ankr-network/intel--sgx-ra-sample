@@ -79,6 +79,11 @@ static const sgx_ec256_public_t def_service_public_key = {
 
 sgx_status_t get_report(sgx_report_t *report, sgx_target_info_t *target_info)
 {
+  const char* message = (const char*) "Quoted message from inside Ankr SGX enclave.";
+  sgx_report_data_t report_data;
+  memset(&report_data, 0, sizeof(report_data));
+  memcpy(&report_data, message, strlen(message));
+  
 #ifdef SGX_HW_SIM
 	return sgx_create_report(NULL, NULL, report);
 #else

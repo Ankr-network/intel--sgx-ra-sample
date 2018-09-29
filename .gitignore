@@ -8,3 +8,4 @@ settings.dist
 settings.local
 win32/agent_win32.cpp
 win32/agent_win32.h
+openssl-1.1.0i/
