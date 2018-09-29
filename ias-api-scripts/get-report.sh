@@ -19,6 +19,7 @@ REPORT_ENDPOINT="/attestation/sgx/v3/report"
 ATTESTATION_EVIDENCE="quotes/quote-from-isv.json"
 # ATTESTATION_EVIDENCE="quotes/quote-from-enclave-by-hand.json"
 # ATTESTATION_EVIDENCE="quotes/empty-quote.json"
+# ATTESTATION_EVIDENCE="quotes/quote-from-stanley.json"
 
 cat ${ATTESTATION_EVIDENCE}
 
