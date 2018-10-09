@@ -1108,6 +1108,46 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 	if ( sgxrv != SGX_SUCCESS ) {
 		fprintf(stderr, "sgx_create_report: %08x\n", sgxrv);
 		return 1;
+	} else {
+		puts("========================");
+		puts("Prepared report details:");
+		eprintf("report.body   = %s\n",
+			hexstring(&report.body, sizeof(sgx_report_body_t)));
+		eprintf("report.key_id   = %s\n",
+			hexstring(&report.key_id, sizeof(sgx_key_id_t)));
+		eprintf("report.mac   = %s\n",
+			hexstring(&report.mac, sizeof(sgx_mac_t)));
+		puts("========================");
+
+		puts("========================");
+		puts("Prepared report body details:");
+		eprintf("report.body.mr_enclave   = %s\n",
+			hexstring(&report.body.mr_enclave, sizeof(sgx_measurement_t)));
+		puts("Report data (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-data-t)");
+		eprintf("report.body.report_data   = %s\n",
+			hexstring(&report.body.report_data, sizeof(sgx_report_data_t)));
+		eprintf("report.body.report_data   = %s\n",
+			&report.body.report_data);
+		puts("========================");
+	}
+
+	puts("==========================\n");
+	puts("Verify report before quote\n");
+	puts("==========================\n");
+
+	sgx_status_t verify_report_status;
+	status = ecall_sgx_verify_report(
+		eid, &verify_report_status, &report);
+	if ( status != SGX_SUCCESS ) {
+		fprintf(stderr, "verify_report_status call failed w/: %08x\n", status);
+		return 1;
+	} else {
+		if (verify_report_status == SGX_SUCCESS) {
+			eprintf("Success: verify_report_status result: %08x\n", verify_report_status);
+		} else {
+			eprintf("Failure: verify_report_status result: %08x\n", verify_report_status);
+			puts("Error code 3001 is SGX_ERROR_MAC_MISMATCH: Indicates report verification error");
+		}
 	}
 
 	// sgx_get_quote_size() has been deprecated, but our PSW may be too old
@@ -1138,6 +1178,56 @@ int do_quote(sgx_enclave_id_t eid, config_t *config)
 		fprintf(stderr, "sgx_get_quote: %08x\n", status);
 		return 1;
 	}
+
+	// Investigate quote
+	puts("=================\n");
+	puts("Generated quote details:\n");
+	puts("=================\n");
+
+	eprintf("quote.version   = %s\n",
+		hexstring(&quote->version, sizeof(uint16_t)));
+	eprintf("quote.sign_type   = %s\n",
+		hexstring(&quote->sign_type, sizeof(uint16_t)));
+	eprintf("quote.epid_group_id   = %s\n",
+		hexstring(&quote->epid_group_id, sizeof(sgx_epid_group_id_t)));
+	eprintf("quote.qe_svn   = %s\n",
+		hexstring(&quote->qe_svn, sizeof(sgx_isv_svn_t)));
+	eprintf("quote.pce_svn   = %s\n",
+		hexstring(&quote->pce_svn, sizeof(sgx_isv_svn_t)));
+	eprintf("quote.xeid   = %s\n",
+		hexstring(&quote->xeid, sizeof(uint32_t)));
+	eprintf("quote.basename   = %s\n",
+		hexstring(&quote->basename, sizeof(sgx_basename_t)));
+	eprintf("quote.report_body.cpu_svn   = %s\n",
+		hexstring(&quote->report_body.cpu_svn, sizeof(sgx_cpu_svn_t)));
+	eprintf("quote.report_body.misc_select   = %s\n",
+		hexstring(&quote->report_body.misc_select, sizeof(sgx_misc_select_t)));
+	eprintf("quote.report_body.reserved1   = %s\n",
+		hexstring(&quote->report_body.reserved1, sizeof(uint8_t[28])));
+	eprintf("quote.report_body.attributes   = %s\n",
+		hexstring(&quote->report_body.attributes, sizeof(sgx_attributes_t)));
+	eprintf("quote.report_body.mr_enclave   = %s\n",
+		hexstring(&quote->report_body.mr_enclave, sizeof(sgx_measurement_t)));
+	eprintf("quote.report_body.reserved2   = %s\n",
+		hexstring(&quote->report_body.reserved2, sizeof(uint8_t[32])));
+	eprintf("quote.report_body.mr_signer   = %s\n",
+		hexstring(&quote->report_body.mr_signer, sizeof(sgx_measurement_t)));
+	eprintf("quote.report_body.reserved3   = %s\n",
+		hexstring(&quote->report_body.reserved3, sizeof(uint8_t[96])));
+	eprintf("quote.report_body.isv_prod_id   = %s\n",
+		hexstring(&quote->report_body.isv_prod_id, sizeof(sgx_prod_id_t)));
+	eprintf("quote.report_body.isv_svn   = %s\n",
+		hexstring(&quote->report_body.isv_svn, sizeof(sgx_isv_svn_t)));
+	eprintf("quote.report_body.reserved4   = %s\n",
+		hexstring(&quote->report_body.reserved4, sizeof(uint8_t[60])));
+	eprintf("quote.report_body.report_data   = %s\n",
+		hexstring(&quote->report_body.report_data, sizeof(sgx_report_data_t)));
+	eprintf("quote.report_body.signature_len   = %s, or %d\n",
+		hexstring(&quote->signature_len, sizeof(uint32_t)), quote->signature_len);
+	eprintf("quote.report_body.signature   = %s\n",
+		hexstring(&quote->signature, quote->signature_len));
+
+	puts("\n\n");
 
 	/* Print our quote */
 

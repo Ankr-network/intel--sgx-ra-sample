@@ -55,6 +55,57 @@ Then follow these additional instructions to run this version of the example aft
   $ run-client -v -d
   ```
 
+## Quote generation
+
+SGX supports quote generation not just within the remote attestation process, but also as an independent procedure.
+
+The quote generation process works as follows:
+1. The untrusted application calls `sgx_init_quote` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-init-quote) to retrieve info from the enclave for which we're searching a quote
+2. The untrusted application calls an enclave function that generates a report for the enclave using `sgx_create_report` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-create-report).
+The output report of type `sgx_report_t` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-t) features not only the report body `sgx_report_body_t` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-body-t), but also a MAC for authentication as well as the ID of the key used to authenticate the report body.
+3. Finally, the untrusted application calls `sgx_get_quote` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-get-quote) to obtain a quote given the report and other input parameters
+
+### SGX enclave-generated report verification
+
+According to the description in https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-create-report:
+
+> Use the function sgx_create_report to create a cryptographic report that describes the contents of the calling enclave. **The report can be used by other enclaves to verify that the enclave is running on the same platform.**
+
+Therefore, these utility functions cannot be employed to verify in an SGX enclave data set into the report by a remote SGX enclave.
+
+The description at https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-create-report also states that:
+
+> Before the source enclave calls sgx_create_report to generate a report, it needs to populate target_info with information about the target enclave that will verify the report. The target enclave may obtain this information calling sgx_create_report with a NULL pointer for target_info and pass it to the source enclave at the beginning of the inter-enclave attestation process.
+
+Therefore, the target enclave MUST actively generate the target info data (inside the enclave), and provide that data to the source enclave for the report.
+
+### SGX enclave cannot set custom data in quote report body during remote attestation
+
+As part of the remote attestation process, the SGX enclave cannot set custom data in the quote report sent to teh ISV SP, because the report data field is used to store the hashes of keys employed in the remote attestation.
+
+According to https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-ra-msg3-t:
+
+> **quote:**
+Quote returned from sgx_get_quote. The first 32-byte report_body.report_data field in Quote is set to SHA256 hash of ga, gb and VK, and the second 32-byte is set to all 0s.
+
+That is, the `sgx_report_data_t report_data` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-data-t) field in the `sgx_report_body_t report_body` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-report-body-t) field in the `uint8_t quote[]` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-quote-t) included in msg3 (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-ra-msg3-t) from client to ISV SP CANNOT be used to store custom data from the enclave.
+
+It's unclear whether the second 32 bytes must be set to zero, or could be set to other values.
+
+In any case, the high-level function `sgx-ra-proc-msg2` (https://software.intel.com/en-us/sgx-sdk-dev-reference-sgx-ra-proc-msg2) outputs `msg3` fully constructed, and thus it's impractical to store custom data into the quote report during the remote attestation process.
+
+## Intel Attestation Service-verified quote report
+
+The Intel Attestation Service (IAS) offers an API to let ISV/SP verify a quote from a remote enclave.
+
+The HTTP response feature several important headers:
+* the `x-iasreport-signature` header is the signature by the IAS on the quote report
+* the `x-iasreport-signing-certificate` header features two certificates:
+  * the first certificate is 2048 bits and is used to extract the public key used by IAS to sign the quote report and thus generate the signature stored in the header above
+  * the second certificate it the attestation report signing CA certificate provided by Intel uppon registration as an ISV
+
+Supposedly, the ISV SP can then distribute the signed quote report (i.e., the quote report and the signature), and anybody should be able to verify that the report was signed by IAS, and thus can be trusted to carry correct information about/from whatever remote SGX enclave generated the quote.
+
 ## <a name="intro"></a>Introduction
 
 This code sample demonstrates the procedures that must be followed when performing Remote Attestation for an Intel SGX enclave. The code sample includes both a sample ISV (independent software vendor) client (and its enclave) and ISV remote attestation server. This code sample has been tested on the following platforms:
